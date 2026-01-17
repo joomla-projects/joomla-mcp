@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <help key="MCP:_Options"/>
+    <inlinehelp button="show"/>
+    <fieldset name="basic" label="COM_MCP_FIELDSET_BASIC">
+        <field name="enabled"
+               type="radio"
+               default="0"
+               class="btn-group btn-group-yesno"
+               label="COM_MCP_ENABLED_LABEL"
+               description="COM_MCP_ENABLED_DESC"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field name="require_token"
+               type="radio"
+               default="1"
+               class="btn-group btn-group-yesno"
+               label="COM_MCP_REQUIRE_TOKEN_LABEL"
+               description="COM_MCP_REQUIRE_TOKEN_DESC"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field name="access_token"
+               type="password"
+               label="COM_MCP_ACCESS_TOKEN_LABEL"
+               description="COM_MCP_ACCESS_TOKEN_DESC"
+               filter="string"
+               autocomplete="off"
+               showon="require_token:1"
+        />
+    </fieldset>
+
+    <fieldset name="permissions"
+              label="JCONFIG_PERMISSIONS_LABEL"
+    >
+
+        <field name="rules"
+               type="rules"
+               label="JCONFIG_PERMISSIONS_LABEL"
+               filter="rules"
+               validate="rules"
+               component="com_installer"
+               section="component"
+        />
+
+    </fieldset>
+</config>

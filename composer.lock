@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2df901fd7522bfe04b4f65844cb4a62d",
+    "content-hash": "089a579fe256c22848921ceb9592298e",
     "packages": [
         {
             "name": "algo26-matthias/idna-convert",
@@ -2531,6 +2531,50 @@
                 }
             ],
             "time": "2023-01-02T13:28:00+00:00"
+        },
+        {
+            "name": "logiscape/mcp-sdk-php",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/logiscape/mcp-sdk-php.git",
+                "reference": "f3db17913f36d649b97a3554b2e9c743d17cde2d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/logiscape/mcp-sdk-php/zipball/f3db17913f36d649b97a3554b2e9c743d17cde2d",
+                "reference": "f3db17913f36d649b97a3554b2e9c743d17cde2d",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=8.1",
+                "psr/log": "^2.0 ||^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.0"
+            },
+            "suggest": {
+                "ext-pcntl": "For better process handling in CLI environments",
+                "monolog/monolog": "^3.0 - For debugging and logging capabilities"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Mcp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Model Context Protocol SDK for PHP",
+            "support": {
+                "issues": "https://github.com/logiscape/mcp-sdk-php/issues",
+                "source": "https://github.com/logiscape/mcp-sdk-php/tree/v1.2.0"
+            },
+            "time": "2025-06-12T19:08:29+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",
@@ -9654,9 +9698,9 @@
         "ext-gd": "*",
         "ext-dom": "*"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.3.0"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.3.0"
 }

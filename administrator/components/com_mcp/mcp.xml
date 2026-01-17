@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" method="upgrade" version="6.0">
+    <name>COM_MCP</name>
+    <author>Joomla! Project</author>
+    <creationDate>Jan 2026</creationDate>
+    <copyright>(C) 2026 Open Source Matters, Inc.</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorEmail>admin@joomla.org</authorEmail>
+    <authorUrl>www.joomla.org</authorUrl>
+    <version>__DEPLOY_VERSION__</version>
+    <description>COM_MCP_XML_DESCRIPTION</description>
+    <namespace path="src">Joomla\Component\MCP</namespace>
+
+    <administration>
+        <menu>COM_MCP</menu>
+
+        <files folder="admin">
+            <filename>config.xml</filename>
+            <filename>access.xml</filename>
+            <folder>forms</folder>
+            <folder>language</folder>
+            <folder>services</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+
+        <languages folder="admin/language">
+            <language tag="en-GB">en-GB/com_mcp.ini</language>
+            <language tag="en-GB">en-GB/com_mcp.sys.ini</language>
+        </languages>
+    </administration>
+
+    <api>
+        <files folder="api">
+            <folder>components</folder>
+        </files>
+    </api>
+</extension>
