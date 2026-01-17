@@ -72,9 +72,7 @@ class McpEndpoint
     public function handle(HttpMessage $request): ?ResponseInterface
     {
         try {
-            $headers = array_map(function ($values) {
-                return implode(', ', $values);
-            }, $request->getHeaders());
+            $headers = $request->getHeaders();
             $queryParams = $request->getQueryParams();
 
             $this->logger->debug("MCP: Request method: " . $request->getMethod());
@@ -99,13 +97,13 @@ class McpEndpoint
 
             $tokenInfo = $this->authService->validateToken($token, $request);
 
-            if ($tokenInfo !== null) {
+            if ($tokenInfo === null) {
                 $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
 
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
 
-            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
+            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userId);
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
