@@ -1,45 +1,65 @@
-<?php declare(strict_types=1);
+<?php
+
+/**
+ * @package     Joomla.Administrator
+ * @subpackage  com_mcp
+ *
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
 namespace Joomla\Component\MCP\Administrator\View\Mcps;
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Toolbar\ToolbarHelper;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Helper\ContentHelper;
+use Joomla\CMS\MVC\View\ListView;
 
-class HtmlView extends BaseHtmlView
+/**
+ * View class for a list of MCPs.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+class HtmlView extends ListView
 {
-    protected $items;
-    protected $pagination;
-    protected $state;
+    /**
+     * The help link for the view
+     *
+     * @var string
+     */
+    protected $helpLink = 'MCP_Servers';
 
-    public function display($tpl = null)
+    /**
+     * Constructor
+     *
+     * @param   array  $config  An optional associative array of configuration settings.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(array $config)
     {
-        $this->items      = $this->get('Items');
-        $this->pagination = $this->get('Pagination');
-        $this->state      = $this->get('State');
-
-        if ($this->getLayout() === 'default' || !$this->getLayout()) {
-            $this->setLayout('default');
+        if (empty($config['option'])) {
+            $config['option'] = 'com_mcp';
         }
 
-        $this->addToolbar();
+        $config['toolbar_title'] = 'COM_MCP';
+        $config['toolbar_icon']  = 'cog mcp';
+        $config['supports_batch'] = false;
 
-        parent::display($tpl);
+        parent::__construct($config);
     }
 
-    protected function addToolbar()
+    /**
+     * Prepare view data
+     *
+     * @return  void
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    protected function initializeView()
     {
-        $user = Factory::getApplication()->getIdentity();
+        parent::initializeView();
 
-        ToolbarHelper::title(Text::_('COM_MCP'), 'cog');
-        ToolbarHelper::addNew('mcp.add');
-        ToolbarHelper::editList('mcp.edit');
-        ToolbarHelper::deleteList('', 'mcps.delete');
-        if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
-            ToolbarHelper::preferences('com_mcp');
-        }
+        $this->canDo = ContentHelper::getActions('com_mcp');
     }
 }

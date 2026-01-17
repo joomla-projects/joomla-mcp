@@ -24,7 +24,7 @@
                label="JCONFIG_PERMISSIONS_LABEL"
                filter="rules"
                validate="rules"
-               component="com_installer"
+               component="com_mcp"
                section="component"
         />
 

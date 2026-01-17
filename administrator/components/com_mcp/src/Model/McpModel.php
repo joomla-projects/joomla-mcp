@@ -23,7 +23,7 @@ class McpModel extends AdminModel
      *
      * @return  \Joomla\CMS\Table\Table  A \Joomla\CMS\Table\Table object
      *
-     * @since   __DEPLOY_VERSION__
+     * @since  __DEPLOY_VERSION__
      */
 
     public function getTable($name = 'Mcp', $prefix = 'Administrator', $options = [])
@@ -36,7 +36,7 @@ class McpModel extends AdminModel
      *
      * @return  mixed  The data for the form.
      *
-     * @since   1.6
+     * @since  __DEPLOY_VERSION__
      */
     protected function loadFormData()
     {

@@ -7,6 +7,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
+use Joomla\CMS\Versioning\VersionableTableInterface;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Registry\Registry;
 
@@ -15,8 +16,17 @@ use Joomla\Registry\Registry;
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpTable extends Table
+class McpTable extends Table implements VersionableTableInterface
 {
+    use \Joomla\CMS\Tag\TaggableTableTrait;
+
+    /**
+     * Indicates that columns fully support the NULL value in the database
+     *
+     * @var    boolean
+     * @since  __DEPLOY_VERSION__
+     */
+    protected $_supportNullValue = true;
     /**
      * @var int
      */
@@ -47,11 +57,6 @@ class McpTable extends Table
      */
     public $capabilities = '';
 
-        /**
-     * @var string
-     */
-    public $additional_json = '';
-
     /**
      * @var int
      */
@@ -61,6 +66,16 @@ class McpTable extends Table
      * @var int
      */
     public $ordering = 0;
+
+    /**
+     * @var int|null
+     */
+    public $checked_out;
+
+    /**
+     * @var string
+     */
+    public $checked_out_time;
 
     /**
      * @var string
@@ -83,6 +98,16 @@ class McpTable extends Table
     public $modified_by;
 
     /**
+     * @var int
+     */
+    public $version = 1;
+
+    /**
+     * @var string
+     */
+    public $version_note = '';
+
+    /**
      * Constructor
      *
      * @param   DatabaseDriver  $db  Database driver object.
@@ -91,9 +116,22 @@ class McpTable extends Table
      */
     public function __construct(DatabaseDriver $db)
     {
+        $this->typeAlias = 'com_mcp.mcp';
+
         parent::__construct('#__mcp', 'id', $db);
         $this->setColumnAlias('published', 'state');
-        $this->setColumnAlias('published', 'state');
+    }
+
+    /**
+     * Get the type alias for UCM features
+     *
+     * @return  string  The alias as described above
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function getTypeAlias()
+    {
+        return $this->typeAlias;
     }
 
     /**
@@ -115,7 +153,7 @@ class McpTable extends Table
                 $src[$field] = null;
             }
         }
-        foreach (['version', 'user_id', 'catid', 'ordering', 'created_by', 'modified_by'] as $field) {
+        foreach (['version', 'user_id', 'ordering', 'created_by', 'modified_by'] as $field) {
             if (isset($src[$field]) && $src[$field] === '') {
                 $src[$field] = 0;
             }
@@ -193,6 +231,11 @@ class McpTable extends Table
         if (!$this->id) {
             if (empty($this->ordering)) {
                 $this->ordering = self::getNextOrder();
+            }
+        } else {
+            // Increment version for existing records
+            if (property_exists($this, 'version')) {
+                $this->version++;
             }
         }
 

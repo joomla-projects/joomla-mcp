@@ -31,6 +31,15 @@ class HtmlView extends BaseHtmlView
 
         $isNew = ($this->item->id == 0);
         ToolbarHelper::title($isNew ? Text::_('COM_MCP_FORM_TITLE_NEW') : Text::_('COM_MCP_FORM_TITLE_EDIT'), 'cog');
+
+        // Add regenerate token button for existing items
+        if (!$isNew) {
+            $toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance();
+            $toolbar->standardButton('refresh', 'COM_MCP_TOOLBAR_REGENERATE_TOKEN', 'mcp.regenerateToken')
+                ->icon('icon-refresh')
+                ->listCheck(false);
+        }
+
         ToolbarHelper::apply('mcp.apply');
         ToolbarHelper::save('mcp.save');
         ToolbarHelper::cancel('mcp.cancel');

@@ -23,7 +23,7 @@ class McpsController extends AdminController
      *
      * @return  \Joomla\CMS\MVC\Model\BaseDatabaseModel  The model.
      *
-     * @since   __DEPLOY_VERSION__
+     * @since  __DEPLOY_VERSION__
      */
     public function getModel($name = 'Mcp', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
