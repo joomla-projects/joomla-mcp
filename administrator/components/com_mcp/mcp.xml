@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" method="upgrade" version="6.0">
-    <name>COM_MCP</name>
+    <name>com_mcp</name>
     <author>Joomla! Project</author>
     <creationDate>Jan 2026</creationDate>
     <copyright>(C) 2026 Open Source Matters, Inc.</copyright>
@@ -38,6 +38,4 @@
             <language tag="en-GB">en-GB/com_mcp.sys.ini</language>
         </languages>
     </administration>
-
-
 </extension>
