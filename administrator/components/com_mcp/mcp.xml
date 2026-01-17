@@ -10,9 +10,18 @@
     <version>__DEPLOY_VERSION__</version>
     <description>COM_MCP_XML_DESCRIPTION</description>
     <namespace path="src">Joomla\Component\MCP</namespace>
-
+	<install> <!-- Runs on install -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall> <!-- Runs on uninstall -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
     <administration>
-        <menu>COM_MCP</menu>
+		<menu img="class:bookmark">COM_MCP</menu>
 
         <files folder="admin">
             <filename>config.xml</filename>
