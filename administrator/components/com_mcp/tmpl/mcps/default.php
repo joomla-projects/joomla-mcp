@@ -37,7 +37,10 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'a.state', $listDirn, $listOrder); ?>
                             </th>
                             <th class="nowrap">
-                                <?php echo HTMLHelper::_('searchtools.sort', 'COM_MCP_FIELD_NAME_LABEL', 'a.name', $listDirn, $listOrder); ?>
+                                <?php echo HTMLHelper::_('searchtools.sort', 'COM_MCP_FIELD_CLIENT_NAME_LABEL', 'a.client_name', $listDirn, $listOrder); ?>
+                            </th>
+                            <th class="nowrap">
+                                <?php echo HTMLHelper::_('searchtools.sort', 'COM_MCP_FIELD_USERNAME_LABEL', 'a.username', $listDirn, $listOrder); ?>
                             </th>
                             <th width="10%" class="nowrap d-none d-md-table-cell">
                                 <?php echo HTMLHelper::_('searchtools.sort', 'COM_MCP_FIELD_CREATED_LABEL', 'a.created', $listDirn, $listOrder); ?>
@@ -58,8 +61,11 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 </td>
                                 <td>
                                     <a href="<?php echo Route::_('index.php?option=com_mcp&task=mcp.edit&id=' . (int) $item->id); ?>">
-                                        <?php echo $this->escape($item->name); ?>
+                                        <?php echo $this->escape($item->client_name); ?>
                                     </a>
+                                </td>
+                                <td>
+                                    <?php echo $this->escape($item->username); ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('date', $item->created, Text::_('DATE_FORMAT_LC4')); ?>

@@ -26,7 +26,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar()
     {
         $isNew = ($this->item->id == 0);
-        ToolbarHelper::title($isNew ? Text::_('COM_MCP_NEW') : Text::_('COM_MCP_EDIT'), 'cog');
+        ToolbarHelper::title($isNew ? Text::_('COM_MCP_FORM_TITLE_NEW') : Text::_('COM_MCP_FORM_TITLE_EDIT'), 'cog');
         ToolbarHelper::apply('mcp.apply');
         ToolbarHelper::save('mcp.save');
         ToolbarHelper::cancel('mcp.cancel');

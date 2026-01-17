@@ -25,32 +25,36 @@ HTMLHelper::_('behavior.keepalive');
       method="post" name="adminForm" id="adminForm" class="form-validate">
 
     <div class="main-card">
+        <?php echo HTMLHelper::_('uitab.startTabSet', 'myTab', ['active' => 'details', 'recall' => true, 'breakpoint' => 768]); ?>
+
+        <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'details', Text::_('JDETAILS')); ?>
         <div class="row">
             <div class="col-lg-9">
-                <?php echo HTMLHelper::_('uitab.startTabSet', 'myTab', ['active' => 'details']); ?>
-
-                <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'details', Text::_('JDETAILS')); ?>
                 <div class="row">
                     <div class="col-md-12">
                         <?php echo $this->form->renderFieldset('details'); ?>
                     </div>
                 </div>
-                <?php echo HTMLHelper::_('uitab.endTab'); ?>
-
-                <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
-
             <div class="col-lg-3">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title"><?php echo Text::_('COM_MCP_GROUP_LABEL_PUBLISHING_DETAILS'); ?></h3>
-                    </div>
-                    <div class="card-body">
-                        <?php echo $this->form->renderFieldset('publish'); ?>
-                    </div>
-                </div>
+                <?php echo $this->form->renderFieldset('details2'); ?>
             </div>
         </div>
+        <?php echo HTMLHelper::_('uitab.endTab'); ?>
+
+        <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'publishing', Text::_('JGLOBAL_FIELDSET_PUBLISHING')); ?>
+        <div class="row">
+            <div class="col-md-12">
+                <fieldset id="fieldset-publishingdata" class="options-form">
+                    <legend><?php echo Text::_('JGLOBAL_FIELDSET_PUBLISHING'); ?></legend>
+                    <div>
+                        <?php echo $this->form->renderFieldset('publish'); ?>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <?php echo HTMLHelper::_('uitab.endTab'); ?>
+        <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
     </div>
 
     <input type="hidden" name="task" value="">

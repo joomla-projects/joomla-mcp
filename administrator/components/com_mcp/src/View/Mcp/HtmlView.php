@@ -27,16 +27,14 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
-        // Hole den aktuell eingeloggten Benutzer
         $user = \Joomla\CMS\Factory::getApplication()->getIdentity();
 
         $isNew = ($this->item->id == 0);
-        ToolbarHelper::title($isNew ? Text::_('COM_MCP_NEW') : Text::_('COM_MCP_EDIT'), 'cog');
+        ToolbarHelper::title($isNew ? Text::_('COM_MCP_FORM_TITLE_NEW') : Text::_('COM_MCP_FORM_TITLE_EDIT'), 'cog');
         ToolbarHelper::apply('mcp.apply');
         ToolbarHelper::save('mcp.save');
         ToolbarHelper::cancel('mcp.cancel');
 
-        // Prüfen, ob der Nutzer die Berechtigung hat, die Optionen zu sehen
         if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
             ToolbarHelper::preferences('com_mcp');
         }

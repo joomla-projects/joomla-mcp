@@ -26,7 +26,7 @@ class McpTable extends Table
     /**
      * @var string
      */
-    public $name = '';
+    public $client_name = '';
 
     /**
      * @var int
@@ -36,12 +36,12 @@ class McpTable extends Table
     /**
      * @var string
      */
-    public $user_name = '';
+    public $username = '';
 
     /**
      * @var string
      */
-    public $user_token = '';
+    public $client_token = '';
 
     /**
      * @var string
@@ -93,7 +93,6 @@ class McpTable extends Table
     public function __construct(DatabaseDriver $db)
     {
         parent::__construct('#__mcp', 'id', $db);
-        // Sage Joomla, dass 'state' die Spalte für den Veröffentlichungsstatus ist
         $this->setColumnAlias('published', 'state');
     }
 
@@ -111,13 +110,11 @@ class McpTable extends Table
             $src['params'] = '{}';
         }
 
-        // Leere Datumsfelder auf NULL setzen, um MySQL-Fehler zu vermeiden
         foreach (['publish_up', 'publish_down', 'checked_out_time', 'reset', 'created', 'modified'] as $field) {
             if (isset($src[$field]) && ($src[$field] === '' || $src[$field] === Factory::getDbo()->getNullDate())) {
                 $src[$field] = null;
             }
         }
-        // Leere Integer-Werte bereinigen (z.B. version, user_id, catid)
         foreach (['version', 'user_id', 'catid', 'ordering', 'created_by', 'modified_by'] as $field) {
             if (isset($src[$field]) && $src[$field] === '') {
                 $src[$field] = 0;
@@ -141,24 +138,19 @@ class McpTable extends Table
     {
         $user = Factory::getApplication()->getIdentity();
 
-        // Logik für neue Datensätze
         if (!$this->id) {
-            // Automatisch die User-ID des Erstellers setzen
             if (empty($this->user_id)) {
                 $this->user_id = $user->id;
             }
 
-            // Automatisch den User-Namen setzen
-            if (empty($this->user_name)) {
-                $this->user_name = $user->name;
+            if (empty($this->username)) {
+                $this->username = $user->name;
             }
 
-            // Automatisch einen sicheren User-Token generieren
-            if (empty($this->user_token)) {
-                $this->user_token = ApplicationHelper::getHash(microtime() . $user->id);
+            if (empty($this->client_token)) {
+                $this->client_token = ApplicationHelper::getHash(microtime() . $user->id);
             }
 
-            // Standard Joomla Erstellungsdatum (Abwärtskompatible Methode)
             if (!(int) $this->created) {
                 $this->created = Factory::getDate()->toSql();
             }
@@ -168,7 +160,6 @@ class McpTable extends Table
             }
         }
 
-        // Änderungsdatum und Nutzer bei jedem Speichern aktualisieren
         $this->modified    = Factory::getDate()->toSql();
         $this->modified_by = $user->id;
 
@@ -200,7 +191,6 @@ class McpTable extends Table
         $date = Factory::getDate()->toSql();
 
         if (!$this->id) {
-            // Neue Datensätze an das Ende der Sortierung setzen
             if (empty($this->ordering)) {
                 $this->ordering = self::getNextOrder();
             }

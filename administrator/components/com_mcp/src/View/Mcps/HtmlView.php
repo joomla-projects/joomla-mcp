@@ -21,7 +21,6 @@ class HtmlView extends BaseHtmlView
         $this->pagination = $this->get('Pagination');
         $this->state      = $this->get('State');
 
-        // Falls Joomla das Layout vergisst, setzen wir es hier explizit auf 'default'
         if ($this->getLayout() === 'default' || !$this->getLayout()) {
             $this->setLayout('default');
         }
@@ -33,14 +32,12 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
-        // Hole den aktuell eingeloggten Benutzer
         $user = Factory::getApplication()->getIdentity();
 
         ToolbarHelper::title(Text::_('COM_MCP'), 'cog');
         ToolbarHelper::addNew('mcp.add');
         ToolbarHelper::editList('mcp.edit');
         ToolbarHelper::deleteList('', 'mcps.delete');
-        // Prüfen, ob der Nutzer die Berechtigung hat, die Optionen zu sehen
         if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
             ToolbarHelper::preferences('com_mcp');
         }

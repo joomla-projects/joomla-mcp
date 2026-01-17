@@ -11,28 +11,30 @@
 		/>
 
 		<field
-			name="name"
+			name="client_name"
 			type="text"
-			label="COM_MCP_FIELD_NAME_LABEL"
+			label="COM_MCP_FIELD_CLIENT_NAME_LABEL"
 			required="true"
 		/>
 
 		<field
-			name="user_name"
+			name="client_token"
 			type="text"
-			label="COM_MCP_FIELD_USER_NAME_LABEL"
-			readonly="true"
-			class="readonly"
-		/>
-
-		<field
-			name="user_token"
-			type="text"
-			label="COM_MCP_FIELD_USER_TOKEN_LABEL"
+			label="COM_MCP_FIELD_CLIENT_TOKEN_LABEL"
 			readonly="true"
 			class="readonly font-monospace"
 		/>
 
+		<field
+			name="username"
+			type="text"
+			label="COM_MCP_FIELD_USERNAME_LABEL"
+			readonly="true"
+			class="readonly"
+		/>
+	</fieldset>
+
+	<fieldset name="details2">
 		<field
 			name="state"
 			type="list"
@@ -40,7 +42,7 @@
 			class="form-select-color-state"
 			default="1"
 			validate="options"
-			>
+		>
 			<option value="1">JPUBLISHED</option>
 			<option value="0">JUNPUBLISHED</option>
 			<option value="2">JARCHIVED</option>
@@ -61,36 +63,9 @@
 			label="JGLOBAL_FIELD_VERSION_NOTE_LABEL"
 			maxlength="255"
 		/>
-
-		<field
-			name="description"
-			type="editor"
-			label="JGLOBAL_DESCRIPTION"
-			filter="\Joomla\CMS\Component\ComponentHelper::filterText"
-			buttons="true"
-			hide="readmore,pagebreak,module,article,contact,menu"
-		/>
-
-
-		<field
-			name="capabilities"
-			type="textarea"
-			label="COM_MCP_FIELD_CAPABILITIES_LABEL"
-			rows="5"
-			filter="raw"
-			class="font-monospace"
-		/>
-		<field
-			name="additional_json"
-			type="textarea"
-			label="COM_MCP_FIELD_ADDITIONAL_JSON_LABEL"
-			rows="10"
-			filter="raw"
-			class="font-monospace"
-		/>
 	</fieldset>
 
-	<fieldset name="publish" label="COM_MCP_GROUP_LABEL_PUBLISHING_DETAILS">
+	<fieldset name="publish">
 		<field
 			name="created"
 			type="calendar"

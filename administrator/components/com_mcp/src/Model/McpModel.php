@@ -84,7 +84,7 @@ class McpModel extends AdminModel
         // Sortierliste für das Feld "ordering" generieren
         $db = $this->getDatabase();
         $query = $db->getQuery(true)
-            ->select(['ordering AS value', 'name AS text'])
+            ->select(['ordering AS value', 'client_name AS text'])
             ->from($db->quoteName('#__mcp'))
             ->order($db->quoteName('ordering') . ' ASC');
 
