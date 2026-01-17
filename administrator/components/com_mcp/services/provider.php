@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -6,6 +7,8 @@
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+declare(strict_types=1);
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -16,11 +19,11 @@ use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\Component\MCP\Api\Auth\DemoAuthService;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
-use Mcp\Server\Server;
-use Psr\Log\LoggerInterface;
 
 /**
  * The MCP service provider.
@@ -39,13 +42,13 @@ return new class () implements ServiceProviderInterface {
      */
     public function register(Container $container): void
     {
-
         $container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\MCP'));
         $container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\MCP'));
 
         $container->set(
             ComponentInterface::class,
-            function(Container $container) {
+            function (Container $container) {
+                Factory::$application->set('mcp.authService', new DemoAuthService());
                 $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
                 $component->setMVCFactory($container->get(MVCFactoryInterface::class));
 

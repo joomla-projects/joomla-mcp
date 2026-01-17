@@ -16,7 +16,7 @@ namespace Joomla\Component\MCP\Api\Auth;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Psr\Http\Message\ServerRequestInterface;
+use Mcp\Server\Transport\Http\HttpMessage;
 
 /**
  * OAuth service for MCP server authentication
@@ -25,7 +25,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class DemoAuthService implements AuthServiceInterface
 {
-    public function validateToken(string $token, ServerRequestInterface $request): ?TokenInfo
+    public function validateToken(string $token, HttpMessage $request): ?TokenInfo
     {
         return new TokenInfo((int) $token);
     }
