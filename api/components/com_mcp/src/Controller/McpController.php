@@ -16,19 +16,13 @@ namespace Joomla\Component\MCP\Api\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Component\MCP\Administrator\Event\InitialiseMCPServerEvent;
-use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
 use Joomla\Component\MCP\Api\Core\ToolRegistry;
-use Joomla\Input\Input;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\ServerRequestFactory;
-use Mcp\Server\HttpServerRunner;
-use Mcp\Server\NotificationOptions;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -38,16 +32,6 @@ use Psr\Http\Message\ResponseInterface;
  */
 final class McpController extends BaseController
 {
-    public function __construct(
-        private readonly AuthServiceInterface $authService,
-        $config = [],
-        ?MVCFactoryInterface $factory = null,
-        ?CMSApplicationInterface $app = null,
-        ?Input $input = null
-    ) {
-        parent::__construct($config, $factory, $app, $input);
-    }
-
     /**
      * Handle incoming HTTP request.
      *
@@ -63,7 +47,7 @@ final class McpController extends BaseController
         $request = ServerRequestFactory::fromGlobals();
 
         $toolRegistry = $this->collectHandlers();
-        $authService  = $this->authService;
+        $authService  = $this->app->get('mcp.authService');
         $config       = ['logger' => $this->logger];
         $endpoint     = new McpEndpoint($toolRegistry, $authService, $config);
 
