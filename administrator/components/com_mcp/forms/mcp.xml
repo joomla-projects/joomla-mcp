@@ -161,15 +161,4 @@
 			filter="user_utc"
 		/>
 	</fieldset>
-
-	<fieldset name="custom">
-		<field
-			name="additional_json"
-			type="textarea"
-			label="COM_MCP_FIELD_ADDITIONAL_JSON_LABEL"
-			rows="3"
-			cols="30"
-			filter="raw"
-		/>
-	</fieldset>
 </form>

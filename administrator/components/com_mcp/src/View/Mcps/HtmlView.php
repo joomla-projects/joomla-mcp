@@ -4,6 +4,7 @@ namespace Joomla\Component\MCP\Administrator\View\Mcps;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Language\Text;
@@ -32,9 +33,16 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
+        // Hole den aktuell eingeloggten Benutzer
+        $user = Factory::getApplication()->getIdentity();
+
         ToolbarHelper::title(Text::_('COM_MCP'), 'cog');
         ToolbarHelper::addNew('mcp.add');
         ToolbarHelper::editList('mcp.edit');
         ToolbarHelper::deleteList('', 'mcps.delete');
+        // Prüfen, ob der Nutzer die Berechtigung hat, die Optionen zu sehen
+        if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
+            ToolbarHelper::preferences('com_mcp');
+        }
     }
 }

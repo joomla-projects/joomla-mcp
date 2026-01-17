@@ -48,7 +48,7 @@ class McpTable extends Table
      */
     public $capabilities = '';
 
-    /**
+        /**
      * @var string
      */
     public $additional_json = '';
@@ -93,6 +93,8 @@ class McpTable extends Table
     public function __construct(DatabaseDriver $db)
     {
         parent::__construct('#__mcp', 'id', $db);
+        // Sage Joomla, dass 'state' die Spalte für den Veröffentlichungsstatus ist
+        $this->setColumnAlias('published', 'state');
     }
 
     /**
@@ -107,6 +109,19 @@ class McpTable extends Table
 
         if (!isset($src['params'])) {
             $src['params'] = '{}';
+        }
+
+        // Leere Datumsfelder auf NULL setzen, um MySQL-Fehler zu vermeiden
+        foreach (['publish_up', 'publish_down', 'checked_out_time', 'reset', 'created', 'modified'] as $field) {
+            if (isset($src[$field]) && ($src[$field] === '' || $src[$field] === Factory::getDbo()->getNullDate())) {
+                $src[$field] = null;
+            }
+        }
+        // Leere Integer-Werte bereinigen (z.B. version, user_id, catid)
+        foreach (['version', 'user_id', 'catid', 'ordering', 'created_by', 'modified_by'] as $field) {
+            if (isset($src[$field]) && $src[$field] === '') {
+                $src[$field] = 0;
+            }
         }
 
         return parent::bind($src, $ignore);

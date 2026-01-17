@@ -15,9 +15,13 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null)
     {
-        $this->form = $this->get('Form');
-        $this->item = $this->get('Item');
+        //$this->form = $this->get('Form');
+        //$this->item = $this->get('Item');
 
+        $model       = $this->getModel();
+        $this->form  = $model->getForm();
+        $this->item  = $model->getItem();
+        $this->state = $model->getState();
         // Validierung: Falls das Model kein Formular liefert
         if (count($errors = $this->get('Errors'))) {
             throw new \Exception(implode("\n", $errors), 500);
@@ -30,10 +34,18 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
+        // Hole den aktuell eingeloggten Benutzer
+        $user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+
         $isNew = ($this->item->id == 0);
         ToolbarHelper::title($isNew ? Text::_('COM_MCP_NEW') : Text::_('COM_MCP_EDIT'), 'cog');
         ToolbarHelper::apply('mcp.apply');
         ToolbarHelper::save('mcp.save');
         ToolbarHelper::cancel('mcp.cancel');
+
+        // Prüfen, ob der Nutzer die Berechtigung hat, die Optionen zu sehen
+        if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
+            ToolbarHelper::preferences('com_mcp');
+        }
     }
 }

@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `#__mcp` (
 	`modified` datetime DEFAULT NULL,
 	`modified_by` int unsigned NOT NULL DEFAULT 0,
 	`version` int unsigned NOT NULL DEFAULT 1,
+	`version_note` text,
 	PRIMARY KEY (`id`),
 	KEY `idx_state` (`state`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
