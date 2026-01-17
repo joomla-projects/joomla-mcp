@@ -17,7 +17,7 @@ use Joomla\CMS\MVC\Controller\BaseController;
 
 /**
  * Controller for global configuration
- *
+ *e
  * @since  __DEPLOY_VERSION__
  */
 class DisplayController extends BaseController
@@ -28,5 +28,5 @@ class DisplayController extends BaseController
      * @var    string
      * @since  __DEPLOY_VERSION__
      */
-    protected $default_view = 'options';
+    protected $default_view = 'mcps';
 }

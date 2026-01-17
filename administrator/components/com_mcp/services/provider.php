@@ -39,7 +39,6 @@ return new class () implements ServiceProviderInterface {
      */
     public function register(Container $container): void
     {
-        require_once JPATH_ADMINISTRATOR . '/components/com_mcp/vendor/autoload.php';
 
         $container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\MCP'));
         $container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\MCP'));

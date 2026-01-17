@@ -49,7 +49,7 @@
 
 		<field
 			name="ordering"
-			type="ordering"
+			type="list"
 			label="JFIELD_ORDERING_LABEL"
 			table="#__mcp"
 			field="ordering"
