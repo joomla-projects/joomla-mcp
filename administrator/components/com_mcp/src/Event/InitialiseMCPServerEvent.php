@@ -17,14 +17,20 @@ namespace Joomla\Component\MCP\Administrator\Event;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\Component\MCP\Api\Core\ToolRegistry;
+use Joomla\Component\MCP\Api\Tool\ToolInterface;
 use Joomla\Event\Event;
 
 class InitialiseMCPServerEvent extends Event
 {
     public function __construct(ToolRegistry $tools)
     {
-        $options['tools'] = $tools;
+        $arguments['tools'] = $tools;
 
-        parent::__construct('initialiseMCPServerEvent', $options);
+        parent::__construct('initialiseMCPServerEvent', $arguments);
+    }
+
+    public function addTool(ToolInterface $tool): void
+    {
+        $this->arguments['tools']->addTool($tool);
     }
 }
