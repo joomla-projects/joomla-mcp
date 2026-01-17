@@ -16,6 +16,8 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\User\CurrentUserTrait;
+use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use Mcp\Server\HttpServerRunner;
@@ -38,6 +40,8 @@ class McpEndpoint
      * @since __DEPLOY_VERSION__
      */
     private LoggerInterface $logger;
+
+    use CurrentUserTrait;
 
     /**
      * Constructor.
@@ -72,7 +76,7 @@ class McpEndpoint
     public function handle(HttpMessage $request): ?ResponseInterface
     {
         try {
-            $headers = $request->getHeaders();
+            $headers     = $request->getHeaders();
             $queryParams = $request->getQueryParams();
 
             $this->logger->debug("MCP: Request method: " . $request->getMethod());
@@ -95,7 +99,7 @@ class McpEndpoint
 
             $this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
 
-            $tokenInfo = $this->authService->validateToken($token, $request);
+            $tokenInfo = $this->authService->validateToken($token);
 
             if ($tokenInfo === null) {
                 $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
@@ -103,7 +107,8 @@ class McpEndpoint
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
 
-            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userId);
+            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userid);
+            $this->setCurrentUser(new User($tokenInfo->userid));
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 

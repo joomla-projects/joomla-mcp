@@ -48,9 +48,11 @@ return new class () implements ServiceProviderInterface {
         $container->set(
             ComponentInterface::class,
             function (Container $container) {
-                Factory::$application->set('mcp.authService', new DemoAuthService());
+                $mvcFactory       = $container->get(MVCFactoryInterface::class);
+                $accessTokenModel = $mvcFactory->createModel('AccessToken');
+                Factory::$application->set('mcp.authService', new DemoAuthService($accessTokenModel));
                 $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
-                $component->setMVCFactory($container->get(MVCFactoryInterface::class));
+                $component->setMVCFactory($mvcFactory);
 
                 return $component;
             }

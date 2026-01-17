@@ -1,14 +1,13 @@
 <?php
 
+declare(strict_types=1);
 /**
- * @package     Joomla.MCP
- * @subpackage  com_mcp
+ * @package         Joomla.MCP
+ * @subpackage      com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-
-declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Model;
 
@@ -26,6 +25,15 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 class AccessTokenModel extends BaseDatabaseModel
 {
     /**
+     * Override the legacy error handling behaviour.
+     *
+     * @var bool
+     * @since __DEPLOY_VERSION__
+     *        To be removed in Joomla 7.0
+     */
+    protected $useExceptions = true;
+
+    /**
      * Store an access token in the database
      *
      * @param   array  $data
@@ -33,7 +41,7 @@ class AccessTokenModel extends BaseDatabaseModel
      * @return void
      * @since __DEPLOY_VERSION__
      */
-    public function store(array $data): void
+    public function storeAccessToken(array $data): void
     {
         $db     = $this->getDatabase();
         $time   = time();
@@ -54,73 +62,20 @@ class AccessTokenModel extends BaseDatabaseModel
         }
     }
 
-    public function getByToken(string $token, ?int $time = null, bool $deleted = false)
+    /**
+     * Get an access token from the database by token
+     *
+     * @param string $token  The token to look up
+     * @return array|null  The access token data or null if not found
+     * @since __DEPLOY_VERSION__
+     */
+    public function getByToken(string $token): ?array
     {
         $db    = $this->getDatabase();
         $query = $db->createQuery();
         $query->select('*')
             ->from('#__mcp_access_tokens')
-            ->where('token = ' . $db->quote($token))
-            ->where('tstamp >= ' . ($time ?? time()))
-            ->where('deleted = ' . (int) $deleted);
-
+            ->where('token = ' . $db->quote($token));
         return $db->setQuery($query)->loadAssoc();
-    }
-
-    public function updateUsage(int $uid, string $ip, ?int $time = null): void
-    {
-        $db    = $this->getDatabase();
-        $query = $db->createQuery();
-        $query->update('#__mcp_access_tokens')
-            ->set('last_used = ' . ($time ?? time()))
-            ->set('last_used_ip = ' . $db->quote($ip))
-            ->where('uid = ' . $uid);
-        $db->setQuery($query)->execute();
-    }
-
-    public function getByUserid(int $userid, ?int $time = null, bool $deleted = false)
-    {
-        $db    = $this->getDatabase();
-        $query = $db->createQuery();
-        $query->select('*')
-            ->from('#__mcp_access_tokens')
-            ->where('userid = ' . $userid)
-            ->where('tstamp >= ' . ($time ?? time()))
-            ->where('deleted = ' . (int) $deleted);
-
-        return $db->setQuery($query)->loadAssocList();
-    }
-
-    public function revoke(int $uid, int $userid): void
-    {
-        $db    = $this->getDatabase();
-        $query = $db->createQuery();
-        $query->update('#__mcp_access_tokens')
-            ->set('deleted = 1')
-            ->set('tstamp = ' . time())
-            ->where('uid = ' . $uid)
-            ->where('userid = ' . $userid);
-        $db->setQuery($query)->execute();
-    }
-
-    public function revokeAllForUser(int $userid): void
-    {
-        $db    = $this->getDatabase();
-        $query = $db->createQuery();
-        $query->update('#__mcp_access_tokens')
-            ->set('deleted = 1')
-            ->set('tstamp = ' . time())
-            ->where('userid = ' . $userid);
-        $db->setQuery($query)->execute();
-    }
-
-    public function deleteExpired(?int $time = null): void
-    {
-        $db    = $this->getDatabase();
-        $query = $db->createQuery();
-        $query->update('#__mcp_access_tokens')
-            ->set('deleted = 1')
-            ->set('tstamp = ' . time())
-            ->where('expires < ' . ($time ?? time()));
     }
 }

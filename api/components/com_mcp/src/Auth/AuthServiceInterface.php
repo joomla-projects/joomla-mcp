@@ -29,11 +29,10 @@ interface AuthServiceInterface
      * Validate the given token
      *
      * @param   string                  $token
-     * @param HttpMessage $request
      *
      * @return TokenInfo|null The token information. Null if the token is invalid or expired.
      *
      * @since __DEPLOY_VERSION__
      */
-    public function validateToken(string $token, HttpMessage $request): ?TokenInfo;
+    public function validateToken(string $token): ?TokenInfo;
 }
