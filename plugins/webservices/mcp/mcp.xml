@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="plugin" group="webservices" method="upgrade">
-    <name>PLG_WEBSERVICES_MCP</name>
+    <name>plg_webservices_mcp</name>
     <author>Joomla! Project</author>
     <creationDate>Jan 2026</creationDate>
     <copyright>(C) 2026 Open Source Matters, Inc.</copyright>
