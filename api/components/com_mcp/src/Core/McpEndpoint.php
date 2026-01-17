@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -6,6 +7,8 @@
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Api\Core;
 
@@ -18,8 +21,8 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\TextResponse;
 use Mcp\Server\HttpServerRunner;
 use Mcp\Server\Server;
-use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Mcp\Server\Transport\Http\FileSessionStore;
+use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -32,290 +35,275 @@ use Psr\Log\NullLogger;
  */
 class McpEndpoint
 {
-	/**
-	 * @since __DEPLOY_VERSION__
-	 */
-	private LoggerInterface $logger;
+    /**
+     * @since __DEPLOY_VERSION__
+     */
+    private LoggerInterface $logger;
 
-	/**
-	 * Constructor.
-	 *
-	 * @param   ToolRegistry  $toolRegistry  Tool registry
-	 * @param   array  $config  Configuration. Possible keys:
-	 *                        - logger: Logger instance, defaults to NullLogger
-	 *                        - server_name: Server name, defaults to 'Joomla MCP Server'
-	 *                        - session_timeout: Session timeout in seconds, defaults to 1800
-	 *                        - max_queue_size: Maximum queue size, defaults to 500
-	 *                        - enable_sse: Enable Server-Sent Events, defaults to false
-	 *                        - shared_hosting: Enable shared hosting mode, defaults to false
-	 *                        - tmp_dir: Temporary directory, defaults to JPATH_ROOT . '/tmp'
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function __construct(
-		private readonly ToolRegistry $toolRegistry,
-		private readonly AuthServiceInterface $authService,
-		private readonly array $config = []
-	) {
-		$this->logger = $this->config['logger'] ?? new NullLogger();
-	}
-	
-	/**
-	 * Invoke the endpoint
-	 *
-	 * @param   ServerRequestInterface  $request  Request object
-	 *
-	 * @return ResponseInterface  Response object
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function __invoke(ServerRequestInterface $request): ResponseInterface
-	{
-		try
-		{
-			$headers     = array_map(function ($values) {
-				return implode(', ', $values);
-			}, $request->getHeaders());
-			$queryParams = $request->getQueryParams();
+    /**
+     * Constructor.
+     *
+     * @param ToolRegistry $toolRegistry Tool registry
+     * @param array $config Configuration. Possible keys:
+     *                        - logger: Logger instance, defaults to NullLogger
+     *                        - server_name: Server name, defaults to 'Joomla MCP Server'
+     *                        - session_timeout: Session timeout in seconds, defaults to 1800
+     *                        - max_queue_size: Maximum queue size, defaults to 500
+     *                        - enable_sse: Enable Server-Sent Events, defaults to false
+     *                        - shared_hosting: Enable shared hosting mode, defaults to false
+     *                        - tmp_dir: Temporary directory, defaults to JPATH_ROOT . '/tmp'
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(
+        private readonly ToolRegistry $toolRegistry,
+        private readonly AuthServiceInterface $authService,
+        private readonly array $config = []
+    ) {
+        $this->logger = $this->config['logger'] ?? new NullLogger();
+    }
 
-			$this->logger->debug("MCP: Request method: " . $request->getMethod());
-			$this->logger->debug("MCP: Request headers: " . json_encode($headers));
-			$this->logger->debug("MCP: Query params: " . json_encode($queryParams));
+    /**
+     * Invoke the endpoint
+     *
+     * @param ServerRequestInterface $request Request object
+     *
+     * @return ResponseInterface  Response object
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __invoke(ServerRequestInterface $request): ResponseInterface
+    {
+        try {
+            $headers = array_map(function ($values) {
+                return implode(', ', $values);
+            }, $request->getHeaders());
+            $queryParams = $request->getQueryParams();
 
-			// Check if this is an auth header test request
-			if (isset($queryParams['test']) && $queryParams['test'] === 'auth')
-			{
-				return $this->handleAuthHeaderTest($request);
-			}
+            $this->logger->debug("MCP: Request method: " . $request->getMethod());
+            $this->logger->debug("MCP: Request headers: " . json_encode($headers));
+            $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
 
-			// Authenticate via Bearer token or query parameter
-			$token = $this->extractToken($request);
+            // Check if this is an auth header test request
+            if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
+                return $this->handleAuthHeaderTest($request);
+            }
 
-			if (!$token)
-			{
-				$this->logger->error("MCP: No token found in Authorization header or query params");
+            // Authenticate via Bearer token or query parameter
+            $token = $this->extractToken($request);
 
-				return $this->createUnauthorizedResponse('Missing authentication token');
-			}
+            if (!$token) {
+                $this->logger->error("MCP: No token found in Authorization header or query params");
 
-			$this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
+                return $this->createUnauthorizedResponse('Missing authentication token');
+            }
 
-			$tokenInfo    = $this->authService->validateToken($token, $request);
+            $this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
 
-			if ($tokenInfo !== null)
-			{
-				$this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
+            $tokenInfo = $this->authService->validateToken($token, $request);
 
-				return $this->createUnauthorizedResponse('Invalid or expired token');
-			}
+            if ($tokenInfo !== null) {
+                $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
 
-			$this->logger->info("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
+                return $this->createUnauthorizedResponse('Invalid or expired token');
+            }
 
-			$server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
+            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
 
-			// Register handlers
-			$this->registerHandlers($server, $this->toolRegistry);
+            $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
-			// Configure HTTP options
-			$httpOptions = [
-				'session_timeout' => $this->config['session_timeout'] ?? 1800, // 30 minutes
-				'max_queue_size'  => $this->config['max_queue_size'] ?? 500,
-				'enable_sse'      => $this->config['enable_sse'] ?? false,
-				'shared_hosting'  => $this->config['shared_hosting'] ?? false,
-			];
+            // Register handlers
+            $this->registerHandlers($server, $this->toolRegistry);
 
-			$sessionStore = new FileSessionStore(
-				($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions'
-			);
+            // Configure HTTP options
+            $httpOptions = [
+                'session_timeout' => $this->config['session_timeout'] ?? 1800, // 30 minutes
+                'max_queue_size'  => $this->config['max_queue_size'] ?? 500,
+                'enable_sse'      => $this->config['enable_sse'] ?? false,
+                'shared_hosting'  => $this->config['shared_hosting'] ?? false,
+            ];
 
-			// Create runner and adapter
-			$runner = new HttpServerRunner(
-				$server,
-				$server->createInitializationOptions(),
-				$httpOptions,
-				null,
-				$sessionStore
-			);
+            $sessionStore = new FileSessionStore(
+                ($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions'
+            );
 
-			// Handle the request and capture output
-			ob_start();
+            // Create runner and adapter
+            $runner = new HttpServerRunner(
+                $server,
+                $server->createInitializationOptions(),
+                $httpOptions,
+                null,
+                $sessionStore
+            );
 
-			// Suppress warnings/notices from MCP SDK to prevent deprecation issues
-			$oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+            // Handle the request and capture output
+            ob_start();
 
-			try
-			{
-				$adapter = new StandardPhpAdapter($runner);
-				$adapter->handle();
-			} finally
-			{
-				// Restore error reporting
-				error_reporting($oldErrorReporting);
-			}
+            // Suppress warnings/notices from MCP SDK to prevent deprecation issues
+            $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
 
-			$output = ob_get_clean();
+            try {
+                $adapter = new StandardPhpAdapter($runner);
+                $adapter->handle();
+            } finally {
+                // Restore error reporting
+                error_reporting($oldErrorReporting);
+            }
 
-			// Get the status code set by the adapter
-			$statusCode = http_response_code() ?: 200;
+            $output = ob_get_clean();
 
-			// Try to decode as JSON, fall back to plain text
-			$decodedOutput = json_decode($output, true);
+            // Get the status code set by the adapter
+            $statusCode = http_response_code() ?: 200;
 
-			return $decodedOutput !== null ? new JsonResponse($decodedOutput, $statusCode) : new TextResponse($output, $statusCode);
-		}
-		catch (\Throwable $e)
-		{
-			return new JsonResponse(json_encode([
-				'error'   => 'Internal Server Error',
-				'message' => $e->getMessage()
-			]), 500);
-		}
-	}
+            // Try to decode as JSON, fall back to plain text
+            $decodedOutput = json_decode($output, true);
 
-	/**
-	 * Register MCP handlers
-	 *
-	 * @param   Server  $server  Server instance
-	 * @param   ToolRegistry  $toolRegistry  Tool registry
-	 *
-	 * @return  void
-	 *
-	 * @since   __DEPLOY_VERSION__
-	 */
-	private function registerHandlers(Server $server, ToolRegistry $toolRegistry): void
-	{
-		// Register tool/list handler
-		$server->registerHandler('tools/list', function () use ($toolRegistry) {
-			$tools = [];
+            return $decodedOutput !== null ? new JsonResponse($decodedOutput, $statusCode) : new TextResponse($output, $statusCode);
+        } catch (\Throwable $e) {
+            return new JsonResponse(json_encode([
+                'error'   => 'Internal Server Error',
+                'message' => $e->getMessage(),
+            ]), 500);
+        }
+    }
 
-			foreach ($toolRegistry->getTools() as $tool)
-			{
-				$schema = $tool->getSchema();
+    /**
+     * Register MCP handlers
+     *
+     * @param Server $server Server instance
+     * @param ToolRegistry $toolRegistry Tool registry
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function registerHandlers(Server $server, ToolRegistry $toolRegistry): void
+    {
+        // Register tool/list handler
+        $server->registerHandler('tools/list', function () use ($toolRegistry) {
+            $tools = [];
 
-				$toolDefinition = [
-					'name' => $tool->getName(),
-					...$schema  // Spread the entire schema (description, inputSchema, annotations)
-				];
+            foreach ($toolRegistry->getTools() as $tool) {
+                $schema = $tool->getSchema();
 
-				$tools[] = $toolDefinition;
-			}
+                $toolDefinition = [
+                    'name' => $tool->getName(),
+                    ...$schema,  // Spread the entire schema (description, inputSchema, annotations)
+                ];
 
-			return ['tools' => $tools];
-		});
+                $tools[] = $toolDefinition;
+            }
 
-		// Register tool/call handler
-		$server->registerHandler('tools/call', function ($params) use ($toolRegistry) {
-			$toolName  = $params->name;
-			$arguments = $params->arguments;
+            return ['tools' => $tools];
+        });
 
-			$tool = $toolRegistry->getTool($toolName);
-			if (!$tool)
-			{
-				throw new \InvalidArgumentException('Tool not found: ' . $toolName);
-			}
+        // Register tool/call handler
+        $server->registerHandler('tools/call', function ($params) use ($toolRegistry) {
+            $toolName  = $params->name;
+            $arguments = $params->arguments;
 
-			return $tool->execute($arguments);
-		});
-	}
+            $tool = $toolRegistry->getTool($toolName);
+            if (!$tool) {
+                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
+            }
 
-	/**
-	 * Extract token from request (Bearer header or query parameter)
-	 *
-	 * @param   ServerRequestInterface  $request  Request object
-	 *
-	 * @return  string|null  Token string or null if not found
-	 * @since   __DEPLOY_VERSION__
-	 */
-	private function extractToken(ServerRequestInterface $request): ?string
-	{
-		// Try Authorization header first (preferred method)
-		$authHeader = $request->getHeaderLine('Authorization');
-		if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches))
-		{
-			return $matches[1];
-		}
+            return $tool->execute($arguments);
+        });
+    }
 
-		// Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
-		$serverParams = $request->getServerParams();
-		$httpAuth     = $serverParams['HTTP_AUTHORIZATION'] ?? '';
-		if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches))
-		{
-			return $matches[1];
-		}
+    /**
+     * Extract token from request (Bearer header or query parameter)
+     *
+     * @param ServerRequestInterface $request Request object
+     *
+     * @return  string|null  Token string or null if not found
+     * @since   __DEPLOY_VERSION__
+     */
+    private function extractToken(ServerRequestInterface $request): ?string
+    {
+        // Try Authorization header first (preferred method)
+        $authHeader = $request->getHeaderLine('Authorization');
+        if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+            return $matches[1];
+        }
 
-		// Fallback to query parameter for backward compatibility
-		$queryParams = $request->getQueryParams();
+        // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
+        $serverParams = $request->getServerParams();
+        $httpAuth     = $serverParams['HTTP_AUTHORIZATION'] ?? '';
+        if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
+            return $matches[1];
+        }
 
-		return $queryParams['token'] ?? null;
-	}
+        // Fallback to query parameter for backward compatibility
+        $queryParams = $request->getQueryParams();
 
-	/**
-	 * Create unauthorized response
-	 *
-	 * @param   string  $message  Error message
-	 *
-	 * @return  ResponseInterface  Response object
-	 * @since   __DEPLOY_VERSION__
-	 */
-	private function createUnauthorizedResponse(string $message): ResponseInterface
-	{
-		return new JsonResponse(json_encode([
-			'error'   => 'Unauthorized',
-			'message' => $message
-		]), 401);
-	}
+        return $queryParams['token'] ?? null;
+    }
 
-	/**
-	 * Handle auth header test request
-	 *
-	 * @param ServerRequestInterface $request  Request object
-	 *
-	 * @return ResponseInterface           Response object
-	 * @since  __DEPLOY_VERSION__
-	 */
-	private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
-	{
-		$headers            = [];
-		$receivedAuthHeader = false;
+    /**
+     * Create unauthorized response
+     *
+     * @param string $message Error message
+     *
+     * @return  ResponseInterface  Response object
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createUnauthorizedResponse(string $message): ResponseInterface
+    {
+        return new JsonResponse(json_encode([
+            'error'   => 'Unauthorized',
+            'message' => $message,
+        ]), 401);
+    }
 
-		// Check all possible ways the Authorization header might arrive
-		$authHeader = $request->getHeaderLine('Authorization');
-		if (!empty($authHeader))
-		{
-			$headers['authorization'] = $authHeader;
-			$receivedAuthHeader       = true;
-		}
+    /**
+     * Handle auth header test request
+     *
+     * @param ServerRequestInterface $request Request object
+     *
+     * @return ResponseInterface           Response object
+     * @since  __DEPLOY_VERSION__
+     */
+    private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
+    {
+        $headers            = [];
+        $receivedAuthHeader = false;
 
-		// Check server params for HTTP_AUTHORIZATION
-		$serverParams = $request->getServerParams();
-		if (isset($serverParams['HTTP_AUTHORIZATION']))
-		{
-			$headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
-			$receivedAuthHeader            = true;
-		}
+        // Check all possible ways the Authorization header might arrive
+        $authHeader = $request->getHeaderLine('Authorization');
+        if (!empty($authHeader)) {
+            $headers['authorization'] = $authHeader;
+            $receivedAuthHeader       = true;
+        }
 
-		// Also check for redirect env variable (Apache specific)
-		if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION']))
-		{
-			$headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
-			$receivedAuthHeader                     = true;
-		}
+        // Check server params for HTTP_AUTHORIZATION
+        $serverParams = $request->getServerParams();
+        if (isset($serverParams['HTTP_AUTHORIZATION'])) {
+            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
+            $receivedAuthHeader            = true;
+        }
 
-		return new JsonResponse(
-			[
-				'test'                 => 'auth',
-				'headers_received'     => $headers,
-				'auth_header_detected' => $receivedAuthHeader,
-				'server_software'      => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
-				'hint'                 => $receivedAuthHeader
-					? 'Authorization header received successfully.'
-					: 'Authorization header not received.'
-			],
-			200,
-			[
-				'Access-Control-Allow-Origin'  => '*',
-				'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
-			]
-		);
-	}
+        // Also check for redirect env variable (Apache specific)
+        if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
+            $receivedAuthHeader                     = true;
+        }
+
+        return new JsonResponse(
+            [
+                'test'                 => 'auth',
+                'headers_received'     => $headers,
+                'auth_header_detected' => $receivedAuthHeader,
+                'server_software'      => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
+                'hint'                 => $receivedAuthHeader
+                    ? 'Authorization header received successfully.'
+                    : 'Authorization header not received.',
+            ],
+            200,
+            [
+                'Access-Control-Allow-Origin'  => '*',
+                'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
+            ]
+        );
+    }
 }
