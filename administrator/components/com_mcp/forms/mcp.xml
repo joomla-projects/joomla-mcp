@@ -19,6 +19,22 @@
 		/>
 
 		<field
+			name="user_name"
+			type="text"
+			label="COM_MCP_FIELD_USER_NAME_LABEL"
+			readonly="true"
+			class="readonly"
+		/>
+
+		<field
+			name="user_token"
+			type="text"
+			label="COM_MCP_FIELD_USER_TOKEN_LABEL"
+			readonly="true"
+			class="readonly font-monospace"
+		/>
+
+		<field
 			name="state"
 			type="list"
 			label="JSTATUS"
@@ -37,6 +53,7 @@
 			type="ordering"
 			label="JFIELD_ORDERING_LABEL"
 			table="#__mcp"
+			field="ordering"
 		/>
 
 		<field
@@ -53,6 +70,24 @@
 			filter="\Joomla\CMS\Component\ComponentHelper::filterText"
 			buttons="true"
 			hide="readmore,pagebreak,module,article,contact,menu"
+		/>
+
+
+		<field
+			name="capabilities"
+			type="textarea"
+			label="COM_MCP_FIELD_CAPABILITIES_LABEL"
+			rows="5"
+			filter="raw"
+			class="font-monospace"
+		/>
+		<field
+			name="additional_json"
+			type="textarea"
+			label="COM_MCP_FIELD_ADDITIONAL_JSON_LABEL"
+			rows="10"
+			filter="raw"
+			class="font-monospace"
 		/>
 
 	</fieldset>
