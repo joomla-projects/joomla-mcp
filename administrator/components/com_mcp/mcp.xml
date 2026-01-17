@@ -29,8 +29,8 @@
             <folder>forms</folder>
             <folder>language</folder>
             <folder>services</folder>
+			<folder>sql</folder>
             <folder>src</folder>
-            <folder>tmpl</folder>
         </files>
 
         <languages folder="admin/language">
@@ -39,9 +39,5 @@
         </languages>
     </administration>
 
-    <api>
-        <files folder="api">
-            <folder>components</folder>
-        </files>
-    </api>
+
 </extension>
