@@ -6,6 +6,7 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Component\MCP\Administrator\Event\InitialiseMCPServerEvent;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Mcp\Joomla\Tool\PurgeCache;
+use Joomla\Plugin\Mcp\Joomla\Resource\ApplicationConfig;
 use Joomla\Plugin\Mcp\Joomla\Resource\SysInfo;
 
 final class Joomla extends CMSPlugin implements SubscriberInterface
@@ -22,7 +23,11 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
         // Load plugin language files for MCP API context
         $this->loadLanguage();
 
+        // Register Tools
         $event->addAbility(new PurgeCache());
+
+        // Register Resources
+        $event->addAbility(new ApplicationConfig());
         $event->addAbility(new SysInfo());
     }
 }

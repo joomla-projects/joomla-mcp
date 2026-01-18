@@ -79,6 +79,8 @@ class ApplicationConfig extends Resource
         public string $dbsslcert,
         #[Guarded]
         public string $dbsslcipher,
+        #[Guarded]
+        public string $user,
 
         // Server Settings
         public string $tmp_path,
@@ -98,6 +100,7 @@ class ApplicationConfig extends Resource
         public string $session_redis_server_host,
         public int $session_redis_server_port,
         public int $session_redis_persist,
+        #[Guarded]
         public string $session_redis_server_auth,
         public int $session_redis_server_db,
         #[Description("use 1 to enable session metadata, 0 for disabled")]
@@ -126,6 +129,7 @@ class ApplicationConfig extends Resource
         public int $redis_persist,
         public string $redis_server_host,
         public int $redis_server_port,
+        #[Guarded]
         public string $redis_server_auth,
         public int $redis_server_db,
 
@@ -158,7 +162,9 @@ class ApplicationConfig extends Resource
         public string $replytoname,
         public string $sendmail,
         public string $smtpauth,
+        #[Guarded]
         public string $smtpuser,
+        #[Guarded]
         public string $smtppass,
         public string $smtphost,
         public int $smtpport,
@@ -177,7 +183,9 @@ class ApplicationConfig extends Resource
         public int $proxy_enable,
         public string $proxy_host,
         public int $proxy_port,
+        #[Guarded]
         public string $proxy_user,
+        #[Guarded]
         public string $proxy_pass,
 
         // CORS Settings
