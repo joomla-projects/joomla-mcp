@@ -52,6 +52,9 @@ class McpconfigField extends FormField
                    '</div>';
         }
 
+        // Get subtype attribute
+        $subtype = (string) $this->element['subtype'];
+
         // Get base URL
         $baseUrl = rtrim(Uri::root(), '/');
 
@@ -77,7 +80,7 @@ class McpconfigField extends FormField
             'mcpServers' => [
                 $serverName => [
                     'type' => 'streamable-http',
-                    'url' => $baseUrl . '/api/v1/mcp',
+                    'url' => $baseUrl . '/index.php/api/v1/mcp',
                     'headers' => [
                         'Authorization' => 'Bearer ' . $clientToken
                     ],
@@ -89,17 +92,35 @@ class McpconfigField extends FormField
         // Convert to formatted JSON
         $jsonConfig = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-        // Build HTML output
+        // Build Claude Code CLI command
+        $claudeCodeCommand = sprintf(
+            'claude mcp add --transport http %s %s --header "Authorization: Bearer %s"',
+            $serverName,
+            $baseUrl . '/api/v1/mcp',
+            $clientToken
+        );
+
+        // Build HTML output based on subtype
         $html = [];
         $copyButtonText = Text::_('COM_MCP_FIELD_MCP_CONFIG_COPY_BUTTON');
         $copiedText = Text::_('COM_MCP_FIELD_MCP_CONFIG_COPIED');
 
-        $html[] = '<div class="mcp-config-container">';
-        $html[] = '  <textarea readonly class="form-control font-monospace" rows="12" style="resize: vertical;">' . htmlspecialchars($jsonConfig, ENT_COMPAT, 'UTF-8') . '</textarea>';
-        $html[] = '  <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="navigator.clipboard.writeText(this.previousElementSibling.value); this.textContent=\'' . $copiedText . '\'; setTimeout(() => this.textContent=\'' . $copyButtonText . '\', 2000);">';
-        $html[] = '    <span class="icon-copy" aria-hidden="true"></span> ' . $copyButtonText;
-        $html[] = '  </button>';
-        $html[] = '</div>';
+        if ($subtype === 'claudecode') {
+            // Claude Code CLI command section
+            $copyCommandText = Text::_('COM_MCP_FIELD_MCP_CONFIG_COPY_COMMAND');
+            $html[] = '<div class="input-group">';
+            $html[] = '  <input type="text" readonly class="form-control font-monospace" value="' . htmlspecialchars($claudeCodeCommand, ENT_COMPAT, 'UTF-8') . '">';
+            $html[] = '  <button type="button" class="btn btn-secondary" onclick="navigator.clipboard.writeText(this.previousElementSibling.value); const orig = this.innerHTML; this.innerHTML=\'<span class=&quot;icon-check&quot;></span> ' . $copiedText . '\'; setTimeout(() => this.innerHTML=orig, 2000);">';
+            $html[] = '    <span class="icon-copy" aria-hidden="true"></span> ' . $copyCommandText;
+            $html[] = '  </button>';
+            $html[] = '</div>';
+        } elseif ($subtype === 'fullconfig') {
+            // Full JSON configuration section
+            $html[] = '<textarea readonly class="form-control font-monospace" rows="12" style="resize: vertical;">' . htmlspecialchars($jsonConfig, ENT_COMPAT, 'UTF-8') . '</textarea>';
+            $html[] = '<button type="button" class="btn btn-sm btn-secondary mt-2" onclick="navigator.clipboard.writeText(this.previousElementSibling.value); this.textContent=\'' . $copiedText . '\'; setTimeout(() => this.textContent=\'' . $copyButtonText . '\', 2000);">';
+            $html[] = '  <span class="icon-copy" aria-hidden="true"></span> ' . $copyButtonText;
+            $html[] = '</button>';
+        }
 
         return implode("\n", $html);
     }
@@ -113,6 +134,7 @@ class McpconfigField extends FormField
      */
     protected function getLabel()
     {
+        // Use default label rendering
         return parent::getLabel();
     }
 }

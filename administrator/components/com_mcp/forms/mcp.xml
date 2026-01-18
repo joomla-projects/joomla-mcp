@@ -23,10 +23,19 @@
 		/>
 
 		<field
-			name="mcp_config"
+			name="claude_code_cli"
 			type="mcpconfig"
-			label="COM_MCP_FIELD_MCP_CONFIG_LABEL"
-			description="COM_MCP_FIELD_MCP_CONFIG_DESC"
+			subtype="claudecode"
+			label="COM_MCP_FIELD_MCP_CONFIG_CLAUDE_CODE_TITLE"
+			description="COM_MCP_FIELD_MCP_CONFIG_CLAUDE_CODE_DESC"
+		/>
+
+		<field
+			name="full_config"
+			type="mcpconfig"
+			subtype="fullconfig"
+			label="COM_MCP_FIELD_MCP_CONFIG_FULL_TITLE"
+			description="COM_MCP_FIELD_MCP_CONFIG_FULL_DESC"
 		/>
 
 		<field
