@@ -17,6 +17,7 @@ namespace Joomla\Component\MCP\Api\Auth;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\Component\MCP\Administrator\Model\AccessTokenModel;
+use Joomla\Component\MCP\Administrator\Model\McpModel;
 
 /**
  * OAuth service for MCP server authentication
@@ -32,7 +33,7 @@ class DemoAuthService implements AuthServiceInterface
      *
      * @since __DEPLOY_VERSION__
      */
-    public function __construct(private readonly AccessTokenModel $tokenModel)
+    public function __construct(private readonly McpModel $tokenModel)
     {
     }
 
