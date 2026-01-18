@@ -23,10 +23,10 @@
 		/>
 
 		<field
-			name="version_note"
-			type="text"
-			label="JGLOBAL_FIELD_VERSION_NOTE_LABEL"
-			maxlength="255"
+			name="mcp_config"
+			type="mcpconfig"
+			label="COM_MCP_FIELD_MCP_CONFIG_LABEL"
+			description="COM_MCP_FIELD_MCP_CONFIG_DESC"
 		/>
 
 		<field
@@ -56,6 +56,13 @@
 			label="JFIELD_ORDERING_LABEL"
 			table="#__mcp"
 			field="ordering"
+		/>
+
+		<field
+			name="version_note"
+			type="text"
+			label="JGLOBAL_FIELD_VERSION_NOTE_LABEL"
+			maxlength="255"
 		/>
 
 	</fieldset>

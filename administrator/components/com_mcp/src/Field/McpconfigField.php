@@ -1,0 +1,114 @@
+<?php
+/**
+ * @package     Joomla.Administrator
+ * @subpackage  com_mcp
+ *
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+namespace Joomla\Component\MCP\Administrator\Field;
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\Factory;
+use Joomla\CMS\Form\FormField;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
+
+/**
+ * MCP Config Field
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+class McpconfigField extends FormField
+{
+    /**
+     * The form field type.
+     *
+     * @var    string
+     * @since  __DEPLOY_VERSION__
+     */
+    protected $type = 'Mcpconfig';
+
+    /**
+     * Method to get the field input markup.
+     *
+     * @return  string  The field input markup.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    protected function getInput()
+    {
+        // Get the client token from the form
+        $form = $this->form;
+        $clientToken = $form->getValue('client_token');
+        $clientName = $form->getValue('client_name');
+
+        if (empty($clientToken)) {
+            return '<div class="alert alert-info">' .
+                   '<span class="icon-info-circle" aria-hidden="true"></span> ' .
+                   Text::_('COM_MCP_FIELD_MCP_CONFIG_SAVE_FIRST') .
+                   '</div>';
+        }
+
+        // Get base URL
+        $baseUrl = rtrim(Uri::root(), '/');
+
+        // Extract hostname from URL for server name
+        $parsedUrl = parse_url($baseUrl);
+        $hostname = $parsedUrl['host'] ?? 'localhost';
+
+        // Build server name from hostname and client name
+        // e.g., "joomla-mcp.dev.test-MyClient" or just hostname if no client name
+        $serverName = $hostname;
+        if (!empty($clientName)) {
+            // Sanitize client name for use in server name (remove special chars, spaces, etc.)
+            $sanitizedClientName = preg_replace('/[^a-zA-Z0-9-_]/', '-', $clientName);
+            $serverName = $hostname . '-' . $sanitizedClientName;
+        }
+
+        // Build configuration array
+        $config = [
+            'mcpServers' => [
+                $serverName => [
+                    'type' => 'streamable-http',
+                    'url' => $baseUrl . '/api/v1/mcp',
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $clientToken
+                    ],
+                    'note' => 'For Streamable HTTP connections, add this URL directly in your MCP Client'
+                ]
+            ]
+        ];
+
+        // Convert to formatted JSON
+        $jsonConfig = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        // Build HTML output
+        $html = [];
+        $copyButtonText = Text::_('COM_MCP_FIELD_MCP_CONFIG_COPY_BUTTON');
+        $copiedText = Text::_('COM_MCP_FIELD_MCP_CONFIG_COPIED');
+
+        $html[] = '<div class="mcp-config-container">';
+        $html[] = '  <textarea readonly class="form-control font-monospace" rows="12" style="resize: vertical;">' . htmlspecialchars($jsonConfig, ENT_COMPAT, 'UTF-8') . '</textarea>';
+        $html[] = '  <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="navigator.clipboard.writeText(this.previousElementSibling.value); this.textContent=\'' . $copiedText . '\'; setTimeout(() => this.textContent=\'' . $copyButtonText . '\', 2000);">';
+        $html[] = '    <span class="icon-copy" aria-hidden="true"></span> ' . $copyButtonText;
+        $html[] = '  </button>';
+        $html[] = '</div>';
+
+        return implode("\n", $html);
+    }
+
+    /**
+     * Method to get the field label markup.
+     *
+     * @return  string  The field label markup.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    protected function getLabel()
+    {
+        return parent::getLabel();
+    }
+}
