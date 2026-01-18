@@ -59,13 +59,17 @@ class McpconfigField extends FormField
         $parsedUrl = parse_url($baseUrl);
         $hostname = $parsedUrl['host'] ?? 'localhost';
 
+        // Sanitize hostname: replace dots and other invalid chars with hyphens, convert to lowercase
+        // MCP names can only contain letters, numbers, hyphens, and underscores
+        $sanitizedHostname = strtolower(preg_replace('/[^a-zA-Z0-9-_]/', '-', $hostname));
+
         // Build server name from hostname and client name
-        // e.g., "joomla-mcp.dev.test-MyClient" or just hostname if no client name
-        $serverName = $hostname;
+        // e.g., "joomla-mcp-dev-test-myclient"
+        $serverName = $sanitizedHostname;
         if (!empty($clientName)) {
             // Sanitize client name for use in server name (remove special chars, spaces, etc.)
-            $sanitizedClientName = preg_replace('/[^a-zA-Z0-9-_]/', '-', $clientName);
-            $serverName = $hostname . '-' . $sanitizedClientName;
+            $sanitizedClientName = strtolower(preg_replace('/[^a-zA-Z0-9-_]/', '-', $clientName));
+            $serverName = $sanitizedHostname . '-' . $sanitizedClientName;
         }
 
         // Build configuration array
