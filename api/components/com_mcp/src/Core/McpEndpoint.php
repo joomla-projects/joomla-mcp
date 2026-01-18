@@ -217,7 +217,7 @@ class McpEndpoint
         }
 
         // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
-        $serverParams = $_SERVER();
+        $serverParams = $_SERVER;
         $httpAuth     = $serverParams['HTTP_AUTHORIZATION'] ?? '';
         if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
             return $matches[1];

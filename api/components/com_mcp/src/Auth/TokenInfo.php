@@ -42,10 +42,10 @@ class TokenInfo
         $tokenInfo->pid          = $data['pid'] ?? 0;
         $tokenInfo->tstamp       = new \DateTime($data['tstamp'] ?? 'now');
         $tokenInfo->crdate       = new \DateTime($data['crdate'] ?? 'now');
-        $tokenInfo->token        = $data['token'] ?? '';
-        $tokenInfo->userid       = $data['userid'] ?? 0;
+        $tokenInfo->token        = $data['client_token'] ?? '';
+        $tokenInfo->userid       = $data['user_id'] ?? 0;
         $tokenInfo->client_name  = $data['client_name'] ?? '';
-        $tokenInfo->expires      = new \DateTime($data['expires'] ?? strtotime('+ 24 hous'));
+        $tokenInfo->expires      = new \DateTime($data['expires'] ?? '+ 24 hours');
         $tokenInfo->last_used    = new \DateTime($data['last_used'] ?? 'now');
         $tokenInfo->created_ip   = $data['created_ip'] ?? '';
         $tokenInfo->last_used_ip = $data['last_used_ip'] ?? '';
