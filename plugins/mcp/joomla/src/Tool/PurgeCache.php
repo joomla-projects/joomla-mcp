@@ -13,7 +13,7 @@ class PurgeCache implements ToolInterface
 
     public function getName(): string
     {
-        return Text::_('PLG_MCP_JOOMLA_PURGECACHE_NAME');
+        return "purgeCache";
     }
 
     public function getSchema(): array

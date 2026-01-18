@@ -14,7 +14,7 @@ class SysInfo implements ResourceInterface
 
     public function getName(): string
     {
-        return Text::_('PLG_MCP_JOOMLA_SYSINFO_NAME');
+        return "sysInfo";
     }
 
     public function getUri(): string
