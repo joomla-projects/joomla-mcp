@@ -96,7 +96,7 @@ class McpconfigField extends FormField
         $claudeCodeCommand = sprintf(
             'claude mcp add --transport http %s %s --header "Authorization: Bearer %s"',
             $serverName,
-            $baseUrl . '/api/v1/mcp',
+            $baseUrl . '/index.php/api/v1/mcp',
             $clientToken
         );
 
