@@ -2,17 +2,20 @@
 <extension type="plugin" group="mcp" method="upgrade">
 	<name>plg_mcp_joomla</name>
 	<author>Joomla! Project</author>
-	<creationDate>2017-04</creationDate>
-	<copyright>(C) 2018 Open Source Matters, Inc.</copyright>
+	<creationDate>Jan 2026</creationDate>
+	<copyright>(C) 2016 Open Source Matters, Inc.</copyright>
 	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
 	<authorEmail>admin@joomla.org</authorEmail>
 	<authorUrl>www.joomla.org</authorUrl>
-	<version>4.0.0</version>
-	<description>PLG_INSTALLER_WEBINSTALLER_XML_DESCRIPTION</description>
+	<version>__DEPLOY_VERSION__</version>
+	<description>PLG_MCP_JOOMLA_XML_DESCRIPTION</description>
 	<namespace path="src">Joomla\Plugin\Mcp\Joomla</namespace>
 	<files>
 		<folder plugin="joomla">services</folder>
 		<folder>src</folder>
-		<folder>tmpl</folder>
 	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB/plg_mcp_joomla.ini</language>
+		<language tag="en-GB">language/en-GB/plg_mcp_joomla.sys.ini</language>
+	</languages>
 </extension>
