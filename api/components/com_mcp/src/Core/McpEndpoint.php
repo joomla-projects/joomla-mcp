@@ -239,15 +239,37 @@ class McpEndpoint
     private function extractToken(HttpMessage $request): ?string
     {
         // Try Authorization header first (preferred method)
-        $authHeader = $request->getHeader('Authorization');
-        if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
-            return $matches[1];
+        $authHeader = $request->getHeader('Authorization') ?? '';
+
+        // Try HTTP_AUTHORIZATION from the server environment
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
         }
 
-        // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
-        $serverParams = $_SERVER;
-        $httpAuth     = $serverParams['HTTP_AUTHORIZATION'] ?? '';
-        if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
+        /**
+         * Apache specific fix: mod_php does not expose the Authorization header in the
+         * environment, only via apache_request_headers().
+         * See https://github.com/symfony/symfony/issues/19693 and the same handling in
+         * plg_api-authentication_token.
+         */
+        if (
+            empty($authHeader) && \PHP_SAPI === 'apache2handler'
+            && \function_exists('apache_request_headers') && apache_request_headers() !== false
+        ) {
+            $apacheHeaders = array_change_key_case(apache_request_headers(), CASE_LOWER);
+
+            if (\array_key_exists('authorization', $apacheHeaders)) {
+                $authHeader = $apacheHeaders['authorization'];
+            }
+        }
+
+        // Another Apache specific fix (mod_rewrite/CGI setups pass the header only as
+        // REDIRECT_HTTP_AUTHORIZATION). See https://github.com/symfony/symfony/issues/1813
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        }
+
+        if (preg_match('/Bearer\s+(\S+)/', $authHeader, $matches)) {
             return $matches[1];
         }
 
