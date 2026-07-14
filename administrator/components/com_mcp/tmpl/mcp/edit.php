@@ -15,7 +15,6 @@ use Joomla\CMS\Router\Route;
 
 /** @var \Joomla\Component\MCP\Administrator\View\Mcp\HtmlView $this */
 
-// Validierung und Verhaltensweisen laden
 HTMLHelper::_('behavior.formvalidator');
 HTMLHelper::_('behavior.keepalive');
 
