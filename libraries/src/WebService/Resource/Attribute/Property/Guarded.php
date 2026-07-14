@@ -1,15 +1,21 @@
 <?php
 
 /**
- * Joomla! Content Management System
+ * @package     Joomla.Platform
+ * @subpackage  WebService
  *
- * @copyright  (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license    GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
+/**
+ * Marks a resource property as readable but not mass assignable.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Guarded extends \Attribute
+final class Guarded
 {
 }

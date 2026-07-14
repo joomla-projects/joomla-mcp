@@ -11,14 +11,24 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 /**
- * Supplies a human-readable property description when the convention-derived description is insufficient.
+ * Removes a property from selected resource projections.
  *
  * @since  __DEPLOY_VERSION__
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class Description
+final readonly class Hidden
 {
-    public function __construct(public string $description)
+    /**
+     * @param list<string> $on
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(public array $on)
     {
+    }
+
+    public function appliesTo(string $profile): bool
+    {
+        return \in_array($profile, $this->on, true);
     }
 }

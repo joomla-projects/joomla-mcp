@@ -11,14 +11,11 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 /**
- * Supplies a human-readable property description when the convention-derived description is insufficient.
+ * Marks a property as writable but not part of read or list representations.
  *
  * @since  __DEPLOY_VERSION__
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class Description
+final class WriteOnly
 {
-    public function __construct(public string $description)
-    {
-    }
 }

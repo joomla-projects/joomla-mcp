@@ -10,50 +10,97 @@
 
 namespace Joomla\Component\Content\Api\Resource;
 
+use Joomla\CMS\WebService\Resource\Attribute\AdditionalProperties;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Description;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Example;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Hidden;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Items;
+use Joomla\CMS\WebService\Resource\Attribute\Property\WriteOnly;
 use Joomla\CMS\WebService\Resource\Resource;
+use Joomla\CMS\WebService\Resource\ResourceProfile;
 
-class Article extends Resource
+/**
+ * Canonical article resource contract.
+ *
+ * Properties without defaults are required when an article is created. Guarded properties are returned to clients but
+ * cannot be mass assigned. No property is required for an update because PATCH is partial by convention.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+#[AdditionalProperties]
+final class Article extends Resource
 {
-    public function __construct(
-        #[Guarded]
-        public int $id,
-        public string $typeAlias,
-        #[Guarded]
-        public int $asset_id,
-        public string $title,
-        public string $text,
-        public string $tags,
-        #[Description("use * for all languages")]
-        public string $language,
-        #[Description("use 1 for published, 0 for unpublished, 2 for archived, -2 for trashed")]
-        public int $state,
-        public int $category,
-        public string $images,
-        public string $metakey,
-        public string $metadesc,
-        public string $metadata,
-        public int $access,
-        public int $featured,
-        public string $alias,
-        public string $note,
-        public string $publish_up,
-        public string $publish_down,
-        public string $created,
-        public int $created_by,
-        public string $created_by_alias,
-        #[Guarded]
-        public string $modified,
-        #[Guarded]
-        public int $modified_by,
-        #[Guarded]
-        public int $hits,
-        #[Guarded]
-        public int $version,
-        public string $featured_up,
-        public string $featured_down,
-        public string $urls,
-    ) {
-    }
+    #[Guarded]
+    public int $id;
+
+    #[Guarded]
+    public string $typeAlias;
+
+    #[Guarded]
+    public int $asset_id;
+
+    public string $title;
+
+    #[Guarded]
+    public string $text;
+
+    #[WriteOnly]
+    public string $introtext = '';
+
+    #[WriteOnly]
+    public string $fulltext = '';
+
+    #[Items('integer', [ResourceProfile::CREATE, ResourceProfile::UPDATE])]
+    #[Items('object', [ResourceProfile::READ, ResourceProfile::LIST])]
+    public array $tags = [];
+
+    #[Description('The language code. Use * for all languages.')]
+    #[Example('*')]
+    public string $language = '*';
+
+    #[Description('The publication state: 1 published, 0 unpublished, 2 archived or -2 trashed.')]
+    #[Example(1)]
+    public int $state = 0;
+
+    #[Description('The category identifier.')]
+    public int $category;
+
+    public array $images = [];
+    public string $metakey = '';
+    public string $metadesc = '';
+    public array $metadata = [];
+    public int $access = 1;
+    public int $featured = 0;
+    public string $alias = '';
+    public ?string $note = null;
+    public ?\DateTimeImmutable $publish_up = null;
+    public ?\DateTimeImmutable $publish_down = null;
+
+    #[Guarded]
+    public \DateTimeImmutable $created;
+
+    #[Description('The creating user identifier. A value of 0 uses the current user.')]
+    public int $created_by = 0;
+    public string $created_by_alias = '';
+
+    #[Guarded]
+    public \DateTimeImmutable $modified;
+
+    #[Guarded]
+    #[Hidden([ResourceProfile::LIST])]
+    public int $modified_by;
+
+    #[Guarded]
+    public int $hits;
+
+    #[Guarded]
+    public int $version;
+
+    public ?\DateTimeImmutable $featured_up = null;
+    public ?\DateTimeImmutable $featured_down = null;
+    public array $urls = [];
+
+    #[Guarded]
+    public ?array $schemaorg = null;
 }

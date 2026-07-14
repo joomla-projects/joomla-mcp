@@ -13,6 +13,9 @@ namespace Joomla\Plugin\WebServices\Content\Extension;
 use Joomla\CMS\Event\Application\BeforeApiRouteEvent;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\ApiRouter;
+use Joomla\CMS\WebService\Operation\OperationCompiler;
+use Joomla\CMS\WebService\Operation\RestRouteFactory;
+use Joomla\Component\Content\Api\Controller\ArticlesController;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Router\Route;
 
@@ -42,9 +45,9 @@ final class Content extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Registers com_content's API's routes in the application
+     * Registers com_content's API routes in the application.
      *
-     * @param   BeforeApiRouteEvent  $event  The event object
+     * @param   BeforeApiRouteEvent  $event  The event object.
      *
      * @return  void
      *
@@ -52,13 +55,13 @@ final class Content extends CMSPlugin implements SubscriberInterface
      */
     public function onBeforeApiRoute(BeforeApiRouteEvent $event): void
     {
-        $router = $event->getRouter();
+        $router       = $event->getRouter();
+        $compiler     = new OperationCompiler();
+        $routeFactory = new RestRouteFactory();
 
-        $router->createCRUDRoutes(
-            'v1/content/articles',
-            'articles',
-            ['component' => 'com_content']
-        );
+        foreach ($compiler->compile(ArticlesController::class) as $operation) {
+            $router->addRoute($routeFactory->create($operation));
+        }
 
         $router->createCRUDRoutes(
             'v1/content/categories',
@@ -67,14 +70,13 @@ final class Content extends CMSPlugin implements SubscriberInterface
         );
 
         $this->createFieldsRoutes($router);
-
         $this->createContentHistoryRoutes($router);
     }
 
     /**
-     * Create fields routes
+     * Creates fields routes.
      *
-     * @param   ApiRouter  &$router  The API Routing object
+     * @param   ApiRouter  &$router  The API routing object.
      *
      * @return  void
      *
@@ -87,19 +89,16 @@ final class Content extends CMSPlugin implements SubscriberInterface
             'fields',
             ['component' => 'com_fields', 'context' => 'com_content.article']
         );
-
         $router->createCRUDRoutes(
             'v1/fields/content/categories',
             'fields',
             ['component' => 'com_fields', 'context' => 'com_content.categories']
         );
-
         $router->createCRUDRoutes(
             'v1/fields/groups/content/articles',
             'groups',
             ['component' => 'com_fields', 'context' => 'com_content.article']
         );
-
         $router->createCRUDRoutes(
             'v1/fields/groups/content/categories',
             'groups',
@@ -108,9 +107,9 @@ final class Content extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Create contenthistory routes
+     * Creates content history routes.
      *
-     * @param   ApiRouter  &$router  The API Routing object
+     * @param   ApiRouter  &$router  The API routing object.
      *
      * @return  void
      *
@@ -118,17 +117,36 @@ final class Content extends CMSPlugin implements SubscriberInterface
      */
     private function createContentHistoryRoutes(&$router): void
     {
-        $defaults    = [
+        $defaults = [
             'component'  => 'com_contenthistory',
             'type_alias' => 'com_content.article',
             'type_id'    => 1,
         ];
+
         $getDefaults = array_merge(['public' => false], $defaults);
 
         $routes = [
-            new Route(['GET'], 'v1/content/articles/:id/contenthistory', 'history.displayList', ['id' => '(\d+)'], $getDefaults),
-            new Route(['PATCH'], 'v1/content/articles/:id/contenthistory/keep', 'history.keep', ['id' => '(\d+)'], $defaults),
-            new Route(['DELETE'], 'v1/content/articles/:id/contenthistory', 'history.delete', ['id' => '(\d+)'], $defaults),
+            new Route(
+                ['GET'],
+                'v1/content/articles/:id/contenthistory',
+                'history.displayList',
+                ['id' => '(\d+)'],
+                $getDefaults,
+            ),
+            new Route(
+                ['PATCH'],
+                'v1/content/articles/:id/contenthistory/keep',
+                'history.keep',
+                ['id' => '(\d+)'],
+                $defaults,
+            ),
+            new Route(
+                ['DELETE'],
+                'v1/content/articles/:id/contenthistory',
+                'history.delete',
+                ['id' => '(\d+)'],
+                $defaults,
+            ),
         ];
 
         $router->addRoutes($routes);
