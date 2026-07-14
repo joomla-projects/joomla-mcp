@@ -151,7 +151,7 @@ class McpTable extends Table implements VersionableTableInterface
         }
 
         foreach (['publish_up', 'publish_down', 'checked_out_time', 'reset', 'created', 'modified'] as $field) {
-            if (isset($src[$field]) && ($src[$field] === '' || $src[$field] === Factory::getDbo()->getNullDate())) {
+            if (isset($src[$field]) && ($src[$field] === '' || $src[$field] === $this->getDatabase()->getNullDate())) {
                 $src[$field] = null;
             }
         }
