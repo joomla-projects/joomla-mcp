@@ -19,12 +19,14 @@ namespace Joomla\Component\MCP\Api\Core;
 use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
+use Laminas\Diactoros\Response;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Stream;
 use Mcp\Server\HttpServerRunner;
 use Mcp\Server\Server;
+use Mcp\Server\Transport\Http\BufferedIo;
 use Mcp\Server\Transport\Http\FileSessionStore;
 use Mcp\Server\Transport\Http\HttpMessage;
-use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -70,10 +72,10 @@ class McpEndpoint
      * Invoke the endpoint
      *
      * @param HttpMessage $request
-     * @return ResponseInterface|null
+     * @return ResponseInterface
      * @since  __DEPLOY_VERSION__
      */
-    public function handle(HttpMessage $request): ?ResponseInterface
+    public function handle(HttpMessage $request): ResponseInterface
     {
         try {
             $headers     = $request->getHeaders();
@@ -127,27 +129,45 @@ class McpEndpoint
                 ($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions'
             );
 
-            // Create runner and adapter
+            // The SDK would normally write status, headers and body directly to PHP's
+            // output (header(), echo). BufferedIo captures those writes in memory so
+            // we can return a proper response object to the controller instead.
+            $io = new BufferedIo();
+
             $runner = new HttpServerRunner(
                 $server,
                 $server->createInitializationOptions(),
                 $httpOptions,
                 null,
-                $sessionStore
+                $sessionStore,
+                $io
             );
 
             // Suppress warnings/notices from MCP SDK to prevent deprecation issues
             $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
 
             try {
-                $adapter = new StandardPhpAdapter($runner);
-                $adapter->handle();
+                $response = $runner->handleRequest($request);
+                $runner->sendResponse($response);
             } finally {
                 // Restore error reporting
                 error_reporting($oldErrorReporting);
             }
 
-            return null;
+            // Forward the captured transport headers (Mcp-Session-Id, Content-Type, ...)
+            $responseHeaders = [];
+
+            foreach ($io->headers as [$name, $value]) {
+                $responseHeaders[$name][] = $value;
+            }
+
+            // Pass the SDK output through byte-for-byte: a decode/re-encode round-trip
+            // would turn empty JSON objects ({}) into empty arrays ([])
+            $body = new Stream('php://temp', 'wb+');
+            $body->write($io->buffer);
+            $body->rewind();
+
+            return new Response($body, $io->status ?? 200, $responseHeaders);
         } catch (\Throwable $e) {
             return new JsonResponse([
                 'error'   => 'Internal Server Error',
