@@ -20,7 +20,6 @@ class ApplicationConfig extends Resource
         #[Guarded]
         #[Description("Extension ID (Joomla file extension)")]
         public int $id,
-
         // Site Settings
         public string $sitename,
         #[Description("use 0 for site offline, 1 for online")]
@@ -33,7 +32,6 @@ class ApplicationConfig extends Resource
         public int $captcha,
         public int $list_limit,
         public int $access,
-
         // Metadata Settings
         #[Description("Meta description for the site")]
         public string $MetaDesc,
@@ -41,7 +39,6 @@ class ApplicationConfig extends Resource
         public string $MetaVersion,
         public string $MetaRights,
         public string $robots,
-
         // SEO Settings
         #[Description("use 1 for SEF URLs, 0 for standard")]
         public int $sef,
@@ -53,11 +50,9 @@ class ApplicationConfig extends Resource
         public int $unicodeslugs,
         #[Description("use 0 for sitename after, 1 for sitename before, 2 for no sitename")]
         public int $sitename_pagetitles,
-
         // Cookie Settings
         public string $cookie_domain,
         public string $cookie_path,
-
         // Database Settings
         #[Guarded]
         public string $dbtype,
@@ -81,7 +76,6 @@ class ApplicationConfig extends Resource
         public string $dbsslcipher,
         #[Guarded]
         public string $user,
-
         // Server Settings
         public string $tmp_path,
         public string $log_path,
@@ -108,11 +102,9 @@ class ApplicationConfig extends Resource
         public int $session_metadata_for_guest,
         #[Description("use 1 for shared sessions, 0 for separate")]
         public int $shared_session,
-
         // Locale Settings
         public string $offset,
         public string $locale,
-
         // Cache Settings
         #[Description("use 0 for off, 1 for conservative, 2 for progressive")]
         public int $caching,
@@ -132,7 +124,6 @@ class ApplicationConfig extends Resource
         #[Guarded]
         public string $redis_server_auth,
         public int $redis_server_db,
-
         // Debug Settings
         #[Description("use 1 for debug mode, 0 for disabled")]
         public int $debug,
@@ -140,7 +131,6 @@ class ApplicationConfig extends Resource
         public int $debug_lang,
         #[Description("use 1 to show language constants, 0 for disabled")]
         public int $debug_lang_const,
-
         // Logging Settings
         #[Description("use 0 for disabled, 1 for enabled")]
         public int $logging,
@@ -153,7 +143,6 @@ class ApplicationConfig extends Resource
         #[Description("use 1 to log deprecated API, 0 for disabled")]
         public int $log_deprecated,
         public string $logging_custom,
-
         // Mail Settings
         public string $mailer,
         public string $mailfrom,
@@ -173,11 +162,9 @@ class ApplicationConfig extends Resource
         public int $massmailoff,
         #[Description("use 1 to send mail when offline, 0 for disabled")]
         public int $mailonline,
-
         // Feed Settings
         public int $feed_limit,
         public string $feed_email,
-
         // Proxy Settings
         #[Description("use 1 to enable proxy, 0 for disabled")]
         public int $proxy_enable,
@@ -187,22 +174,18 @@ class ApplicationConfig extends Resource
         public string $proxy_user,
         #[Guarded]
         public string $proxy_pass,
-
         // CORS Settings
         #[Description("use 1 to enable CORS, 0 for disabled")]
         public int $cors,
         public string $cors_allow_origin,
         public string $cors_allow_headers,
         public string $cors_allow_methods,
-
         // Permissions
         public string $asset_id,
         public string $rules,
-
         // Frontend Editing
         #[Description("use 1 to enable frontend editing, 0 for disabled")]
         public int $frontediting,
-
         // Behind Load Balancer
         #[Description("use 1 if behind load balancer, 0 for direct")]
         public int $behind_loadbalancer,
