@@ -6,14 +6,17 @@ namespace Joomla\Component\MCP\Administrator\View\Mcp;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Toolbar\ToolbarFactoryInterface;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
 class HtmlView extends BaseHtmlView
 {
     protected $form;
     protected $item;
+    protected mixed $state;
 
     public function display($tpl = null)
     {
@@ -36,7 +39,7 @@ class HtmlView extends BaseHtmlView
 
         // Add regenerate token button for existing items
         if (!$isNew) {
-            $toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance();
+            $toolbar = Factory::getContainer()->get(ToolbarFactoryInterface::class)->createToolbar();
             $toolbar->standardButton('refresh', 'COM_MCP_TOOLBAR_REGENERATE_TOKEN', 'mcp.regenerateToken')
                 ->icon('icon-refresh')
                 ->listCheck(false);
