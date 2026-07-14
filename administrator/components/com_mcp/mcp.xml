@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" method="upgrade" version="6.0">
-    <name>COM_MCP</name>
+    <name>com_mcp</name>
     <author>Joomla! Project</author>
     <creationDate>Jan 2026</creationDate>
     <copyright>(C) 2026 Open Source Matters, Inc.</copyright>
@@ -10,9 +10,18 @@
     <version>__DEPLOY_VERSION__</version>
     <description>COM_MCP_XML_DESCRIPTION</description>
     <namespace path="src">Joomla\Component\MCP</namespace>
-
+	<install> <!-- Runs on install -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall> <!-- Runs on uninstall -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
     <administration>
-        <menu>COM_MCP</menu>
+		<menu img="class:bookmark">COM_MCP</menu>
 
         <files folder="admin">
             <filename>config.xml</filename>
@@ -20,8 +29,8 @@
             <folder>forms</folder>
             <folder>language</folder>
             <folder>services</folder>
+			<folder>sql</folder>
             <folder>src</folder>
-            <folder>tmpl</folder>
         </files>
 
         <languages folder="admin/language">
@@ -29,10 +38,4 @@
             <language tag="en-GB">en-GB/com_mcp.sys.ini</language>
         </languages>
     </administration>
-
-    <api>
-        <files folder="api">
-            <folder>components</folder>
-        </files>
-    </api>
 </extension>

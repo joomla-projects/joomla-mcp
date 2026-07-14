@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -9,21 +8,24 @@ declare(strict_types=1);
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace Joomla\Component\MCP\Api\Core;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\User\CurrentUserTrait;
+use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Laminas\Diactoros\Response\JsonResponse;
-use Laminas\Diactoros\Response\TextResponse;
 use Mcp\Server\HttpServerRunner;
 use Mcp\Server\Server;
 use Mcp\Server\Transport\Http\FileSessionStore;
+use Mcp\Server\Transport\Http\HttpMessage;
 use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -39,11 +41,13 @@ class McpEndpoint
      */
     private LoggerInterface $logger;
 
+    use CurrentUserTrait;
+
     /**
      * Constructor.
      *
-     * @param   ToolRegistry  $toolRegistry  Tool registry
-     * @param   array  $config  Configuration. Possible keys:
+     * @param AbilityRegistry $abilityRegistry Tool registry
+     * @param array           $config          Configuration. Possible keys:
      *                        - logger: Logger instance, defaults to NullLogger
      *                        - server_name: Server name, defaults to 'Joomla MCP Server'
      *                        - session_timeout: Session timeout in seconds, defaults to 1800
@@ -55,7 +59,7 @@ class McpEndpoint
      * @since  __DEPLOY_VERSION__
      */
     public function __construct(
-        private readonly ToolRegistry $toolRegistry,
+        private readonly AbilityRegistry $abilityRegistry,
         private readonly AuthServiceInterface $authService,
         private readonly array $config = []
     ) {
@@ -65,18 +69,14 @@ class McpEndpoint
     /**
      * Invoke the endpoint
      *
-     * @param   ServerRequestInterface  $request  Request object
-     *
-     * @return ResponseInterface  Response object
-     *
+     * @param HttpMessage $request
+     * @return ResponseInterface|null
      * @since  __DEPLOY_VERSION__
      */
-    public function __invoke(ServerRequestInterface $request): ResponseInterface
+    public function handle(HttpMessage $request): ?ResponseInterface
     {
         try {
-            $headers     = array_map(function ($values) {
-                return implode(', ', $values);
-            }, $request->getHeaders());
+            $headers     = $request->getHeaders();
             $queryParams = $request->getQueryParams();
 
             $this->logger->debug("MCP: Request method: " . $request->getMethod());
@@ -99,20 +99,21 @@ class McpEndpoint
 
             $this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
 
-            $tokenInfo    = $this->authService->validateToken($token, $request);
+            $tokenInfo = $this->authService->validateToken($token);
 
-            if ($tokenInfo !== null) {
+            if ($tokenInfo === null) {
                 $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
 
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
 
-            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
+            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userid);
+            $this->setCurrentUser(new User($tokenInfo->userid));
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
             // Register handlers
-            $this->registerHandlers($server, $this->toolRegistry);
+            $this->registerAbilities($server, $this->abilityRegistry);
 
             // Configure HTTP options
             $httpOptions = [
@@ -135,9 +136,6 @@ class McpEndpoint
                 $sessionStore
             );
 
-            // Handle the request and capture output
-            ob_start();
-
             // Suppress warnings/notices from MCP SDK to prevent deprecation issues
             $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
 
@@ -149,15 +147,7 @@ class McpEndpoint
                 error_reporting($oldErrorReporting);
             }
 
-            $output = ob_get_clean();
-
-            // Get the status code set by the adapter
-            $statusCode = http_response_code() ?: 200;
-
-            // Try to decode as JSON, fall back to plain text
-            $decodedOutput = json_decode($output, true);
-
-            return $decodedOutput !== null ? new JsonResponse($decodedOutput, $statusCode) : new TextResponse($output, $statusCode);
+            return null;
         } catch (\Throwable $e) {
             return new JsonResponse(json_encode([
                 'error'   => 'Internal Server Error',
@@ -169,20 +159,20 @@ class McpEndpoint
     /**
      * Register MCP handlers
      *
-     * @param   Server  $server  Server instance
-     * @param   ToolRegistry  $toolRegistry  Tool registry
+     * @param Server          $server          Server instance
+     * @param AbilityRegistry $abilityRegistry Tool registry
      *
      * @return  void
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function registerHandlers(Server $server, ToolRegistry $toolRegistry): void
+    private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry): void
     {
         // Register tool/list handler
-        $server->registerHandler('tools/list', function () use ($toolRegistry) {
+        $server->registerHandler('tools/list', function () use ($abilityRegistry) {
             $tools = [];
 
-            foreach ($toolRegistry->getTools() as $tool) {
+            foreach ($abilityRegistry->getTools() as $tool) {
                 $schema = $tool->getSchema();
 
                 $toolDefinition = [
@@ -197,37 +187,66 @@ class McpEndpoint
         });
 
         // Register tool/call handler
-        $server->registerHandler('tools/call', function ($params) use ($toolRegistry) {
+        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
             $toolName  = $params->name;
             $arguments = $params->arguments;
 
-            $tool = $toolRegistry->getTool($toolName);
+            $tool = $abilityRegistry->getTool($toolName);
+
             if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
+                throw new \InvalidArgumentException('Tool not found: ' . $toolName, 404);
             }
 
             return $tool->execute($arguments);
+        });
+
+        // Register resources/list handler
+        $server->registerHandler('resources/list', function () use ($abilityRegistry) {
+            $resources = [];
+
+            foreach ($abilityRegistry->getResources() as $resource) {
+                $resources[] = [
+                    "uri" => $resource->getUri(),
+                    "name" => $resource->getName(),
+                    "title" => $resource->getTitle(),
+                    "description" => $resource->getDescription()
+                ];
+            }
+
+            return ['resources' => $resources];
+        });
+
+
+        // Register resources/read handler
+        $server->registerHandler('resources/read', function ($params) use ($abilityRegistry) {
+            $resource = $abilityRegistry->getResource($params->uri);
+
+            if (!$resource) {
+                throw new \InvalidArgumentException('Resource not found: ' . $params->uri, 404);
+            }
+
+            return $resource->read();
         });
     }
 
     /**
      * Extract token from request (Bearer header or query parameter)
      *
-     * @param   ServerRequestInterface  $request  Request object
+     * @param HttpMessage $request Request object
      *
      * @return  string|null  Token string or null if not found
      * @since   __DEPLOY_VERSION__
      */
-    private function extractToken(ServerRequestInterface $request): ?string
+    private function extractToken(HttpMessage $request): ?string
     {
         // Try Authorization header first (preferred method)
-        $authHeader = $request->getHeaderLine('Authorization');
+        $authHeader = $request->getHeader('Authorization');
         if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
             return $matches[1];
         }
 
         // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
-        $serverParams = $request->getServerParams();
+        $serverParams = $_SERVER;
         $httpAuth     = $serverParams['HTTP_AUTHORIZATION'] ?? '';
         if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
             return $matches[1];
@@ -242,7 +261,7 @@ class McpEndpoint
     /**
      * Create unauthorized response
      *
-     * @param   string  $message  Error message
+     * @param string $message Error message
      *
      * @return  ResponseInterface  Response object
      * @since   __DEPLOY_VERSION__
@@ -258,25 +277,25 @@ class McpEndpoint
     /**
      * Handle auth header test request
      *
-     * @param ServerRequestInterface $request  Request object
+     * @param HttpMessage $request Request object
      *
      * @return ResponseInterface           Response object
      * @since  __DEPLOY_VERSION__
      */
-    private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
+    private function handleAuthHeaderTest(HttpMessage $request): ResponseInterface
     {
         $headers            = [];
         $receivedAuthHeader = false;
 
         // Check all possible ways the Authorization header might arrive
-        $authHeader = $request->getHeaderLine('Authorization');
+        $authHeader = $request->getHeader('Authorization');
         if (!empty($authHeader)) {
             $headers['authorization'] = $authHeader;
             $receivedAuthHeader       = true;
         }
 
         // Check server params for HTTP_AUTHORIZATION
-        $serverParams = $request->getServerParams();
+        $serverParams = $_SERVER;
         if (isset($serverParams['HTTP_AUTHORIZATION'])) {
             $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
             $receivedAuthHeader            = true;

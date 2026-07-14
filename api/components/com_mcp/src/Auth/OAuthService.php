@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -9,14 +8,19 @@ declare(strict_types=1);
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace Joomla\Component\MCP\Api\Auth;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\Component\MCP\Administrator\Model\McpModel;
+use Joomla\Component\MCP\Administrator\Model\AccessTokenModel;
+use Joomla\Component\MCP\Administrator\Model\OAuthClientModel;
+use Joomla\Component\MCP\Administrator\Model\OAuthCodeModel;
 use Psr\Http\Message\ServerRequestInterface;
+use Random\RandomException;
 
 /**
  * OAuth service for MCP server authentication
@@ -25,13 +29,16 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class OAuthService
 {
-    public function __construct(private readonly McpModel $model)
-    {
+    public function __construct(
+        private readonly AccessTokenModel $accessTokenModel,
+        private readonly OAuthCodeModel $authCodeModel,
+        private readonly OAuthClientModel $clientModel
+    ) {
     }
 
-    private const CLIENT_ID            = 'joomla-mcp-server';
-    private const CODE_EXPIRY_SECONDS  = 600; // 10 minutes
-    private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
+    private const string CLIENT_ID         = 'joomla-mcp-server';
+    private const int CODE_EXPIRY_SECONDS  = 600; // 10 minutes
+    private const int TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
 
     /**
      * Generate authorisation URL for OAuth flow
@@ -43,7 +50,7 @@ class OAuthService
      * @param   string  $challengeMethod  PKCE code challenge method
      * @param   string  $state            State parameter
      *
-     * @return string  Authorisation URL
+     * @return  string  Authorisation URL
      * @since   __DEPLOY_VERSION__
      */
     public function generateAuthorizationUrl(string $baseUrl, string $clientName = '', string $redirectUri = '', string $codeChallenge = '', string $challengeMethod = 'S256', string $state = ''): string
@@ -73,13 +80,14 @@ class OAuthService
     /**
      * Create authorisation code for authenticated user
      *
-     * @param   int     $userid           User ID
-     * @param   string  $clientName       Client name
-     * @param   string  $redirectUri      Redirect URI
-     * @param   string  $pkceChallenge    PKCE code challenge
-     * @param   string  $challengeMethod  PKCE code challenge method
+     * @param int $userid User ID
+     * @param string $clientName Client name
+     * @param string $redirectUri Redirect URI
+     * @param string $pkceChallenge PKCE code challenge
+     * @param string $challengeMethod PKCE code challenge method
      *
      * @return string  Authorisation code
+     * @throws RandomException if a secure token cannot be generated
      * @since   __DEPLOY_VERSION__
      */
     public function createAuthorizationCode(int $userid, string $clientName, string $redirectUri = '', string $pkceChallenge = '', string $challengeMethod = 'S256'): string
@@ -87,7 +95,7 @@ class OAuthService
         $code    = $this->generateSecureToken();
         $expires = time() + self::CODE_EXPIRY_SECONDS;
 
-        $this->model->insertOAuthCode([
+        $this->authCodeModel->store([
             'pid'                   => 0,
             'tstamp'                => time(),
             'crdate'                => time(),
@@ -106,16 +114,17 @@ class OAuthService
     /**
      * Exchange authorisation code for access token
      *
-     * @param   string                       $code          Authorisation code
-     * @param   string|null                  $codeVerifier  PKCE code verifier
-     * @param   ServerRequestInterface|null  $request       Server request object
+     * @param string $code Authorisation code
+     * @param string|null $codeVerifier PKCE code verifier
+     * @param ServerRequestInterface|null $request Server request object
      *
      * @return array|null  Access token response data or null on failure
+     * @throws RandomException if a secure token cannot be generated
      * @since   __DEPLOY_VERSION__
      */
     public function exchangeCodeForToken(string $code, ?string $codeVerifier = null, ?ServerRequestInterface $request = null): ?array
     {
-        $authCode = $this->model->getOAuthCodeData($code, time());
+        $authCode = $this->authCodeModel->getByCode($code, time());
 
         if (!$authCode) {
             return null;
@@ -139,7 +148,7 @@ class OAuthService
             $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
         }
 
-        $this->model->storeAccessToken(
+        $this->accessTokenModel->store(
             [
                 'pid'          => 0,
                 'tstamp'       => time(),
@@ -154,7 +163,7 @@ class OAuthService
             ]
         );
 
-        $this->model->removeAuthCode($authCode['uid']);
+        $this->authCodeModel->deleteByUid($authCode['uid']);
 
         return [
             'access_token' => $accessToken,
@@ -174,20 +183,7 @@ class OAuthService
      */
     public function validateToken(string $token, ?ServerRequestInterface $request = null): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $queryBuilder = $connection->createQueryBuilder();
-        $tokenRecord  = $queryBuilder
-            ->select('*')
-            ->from('tx_mcpserver_access_tokens')
-            ->where(
-                $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($token)),
-                $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
-            )
-            ->executeQuery()
-            ->fetchAssociative();
+        $tokenRecord  = $this->accessTokenModel->getByToken($token);
 
         if (!$tokenRecord) {
             return null;
@@ -199,13 +195,7 @@ class OAuthService
             $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
         }
 
-        $queryBuilder = $connection->createQueryBuilder();
-        $queryBuilder
-            ->update('tx_mcpserver_access_tokens')
-            ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($tokenRecord['uid'])))
-            ->set('last_used', time())
-            ->set('last_used_ip', $clientIp)
-            ->executeStatement();
+        $this->accessTokenModel->updateUsage($tokenRecord['uid'], $clientIp);
 
         return [
             'be_user_uid' => (int)$tokenRecord['be_user_uid'],
@@ -219,58 +209,23 @@ class OAuthService
      */
     public function getUserTokens(int $beUserId): array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $queryBuilder = $connection->createQueryBuilder();
-        $tokens       = $queryBuilder
-            ->select('*')
-            ->from('tx_mcpserver_access_tokens')
-            ->where(
-                $queryBuilder->expr()->eq('be_user_uid', $queryBuilder->createNamedParameter($beUserId)),
-                $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
-            )
-            ->orderBy('crdate', 'DESC')
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        return $tokens ?: [];
+        return $this->accessTokenModel->getByUserid($beUserId) ?: [];
     }
 
     /**
      * Revoke a specific token
      */
-    public function revokeToken(int $tokenUid, int $beUserId): bool
+    public function revokeToken(int $tokenUid, int $userid): void
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $affectedRows = $connection->update(
-            'tx_mcpserver_access_tokens',
-            ['deleted' => 1, 'tstamp' => time()],
-            [
-                'uid'         => $tokenUid,
-                'be_user_uid' => $beUserId,
-            ]
-        );
-
-        return $affectedRows > 0;
+        $this->accessTokenModel->revoke($tokenUid, $userid);
     }
 
     /**
      * Revoke all tokens for a user
      */
-    public function revokeAllUserTokens(int $beUserId): int
+    public function revokeAllUserTokens(int $userid): void
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        return $connection->update(
-            'tx_mcpserver_access_tokens',
-            ['deleted'     => 1, 'tstamp' => time()],
-            ['be_user_uid' => $beUserId]
-        );
+        $this->accessTokenModel->revokeAllForUser($userid);
     }
 
     /**
@@ -280,28 +235,13 @@ class OAuthService
     {
         $currentTime = time();
 
-        // Clean up expired authorization codes
-        $codeConnection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_oauth_codes');
-
-        $codeConnection->delete(
-            'tx_mcpserver_oauth_codes',
-            ['expires' => $codeConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
-        );
-
-        // Mark expired tokens as deleted
-        $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $tokenConnection->update(
-            'tx_mcpserver_access_tokens',
-            ['deleted' => 1, 'tstamp' => $currentTime],
-            ['expires' => $tokenConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
-        );
+        $this->authCodeModel->deleteExpired($currentTime);
+        $this->accessTokenModel->deleteExpired($currentTime);
     }
 
     /**
      * Register a new OAuth client dynamically
+     * @throws RandomException if random bytes cannot be generated
      */
     public function registerClient(array $clientData): array
     {
@@ -309,37 +249,18 @@ class OAuthService
         $clientId     = 'mcp_client_' . bin2hex(random_bytes(16));
         $clientSecret = bin2hex(random_bytes(32));
 
-        // For now, store in database (could be enhanced later)
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_oauth_clients');
+        $this->clientModel->store([
+            'pid'           => 0,
+            'tstamp'        => time(),
+            'crdate'        => time(),
+            'client_id'     => $clientId,
+            'client_secret' => $clientSecret,
+            'client_name'   => $clientData['client_name'] ?? 'MCP Client',
+            'redirect_uris' => json_encode($clientData['redirect_uris'] ?? []),
+            'grant_types'   => json_encode($clientData['grant_types'] ?? ['authorization_code']),
+            'scope'         => $clientData['scope'] ?? 'mcp_access',
+        ]);
 
-        // Check if table exists, if not create it on the fly
-        try {
-            $connection->insert(
-                'tx_mcpserver_oauth_clients',
-                [
-                    'pid'           => 0,
-                    'tstamp'        => time(),
-                    'crdate'        => time(),
-                    'client_id'     => $clientId,
-                    'client_secret' => $clientSecret,
-                    'client_name'   => $clientData['client_name'] ?? 'MCP Client',
-                    'redirect_uris' => json_encode($clientData['redirect_uris'] ?? []),
-                    'grant_types'   => json_encode($clientData['grant_types'] ?? ['authorization_code']),
-                    'scope'         => $clientData['scope'] ?? 'mcp_access',
-                ]
-            );
-        } catch (\Exception $e) {
-            // If table doesn't exist, we'll use the fixed client approach for now
-            return [
-                'client_id'      => self::CLIENT_ID,
-                'client_name'    => $clientData['client_name'] ?? 'MCP Client',
-                'grant_types'    => ['authorization_code'],
-                'response_types' => ['code'],
-                'scope'          => 'mcp_access',
-                'redirect_uris'  => $clientData['redirect_uris'] ?? ['http://localhost'],
-            ];
-        }
 
         return [
             'client_id'      => $clientId,
@@ -374,6 +295,7 @@ class OAuthService
 
     /**
      * Create access token directly (bypassing authorization code flow)
+     * @throws RandomException if random bytes cannot be generated
      */
     public function createDirectAccessToken(int $beUserId, string $clientName, ?ServerRequestInterface $request = null): string
     {
@@ -386,31 +308,25 @@ class OAuthService
             $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
         }
 
-        // Create access token
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $connection->insert(
-            'tx_mcpserver_access_tokens',
-            [
-                'pid'          => 0,
-                'tstamp'       => time(),
-                'crdate'       => time(),
-                'token'        => $accessToken,
-                'be_user_uid'  => $beUserId,
-                'client_name'  => $clientName,
-                'expires'      => $expires,
-                'last_used'    => time(),
-                'created_ip'   => $clientIp,
-                'last_used_ip' => $clientIp,
-            ]
-        );
+        $this->accessTokenModel->store([
+            'pid'          => 0,
+            'tstamp'       => time(),
+            'crdate'       => time(),
+            'token'        => $accessToken,
+            'be_user_uid'  => $beUserId,
+            'client_name'  => $clientName,
+            'expires'      => $expires,
+            'last_used'    => time(),
+            'created_ip'   => $clientIp,
+            'last_used_ip' => $clientIp,
+        ]);
 
         return $accessToken;
     }
 
     /**
      * Generate cryptographically secure token
+     * @throws RandomException
      */
     private function generateSecureToken(): string
     {

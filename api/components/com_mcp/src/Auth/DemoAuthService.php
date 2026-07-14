@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -9,13 +8,15 @@ declare(strict_types=1);
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace Joomla\Component\MCP\Api\Auth;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Psr\Http\Message\ServerRequestInterface;
+use Joomla\Component\MCP\Administrator\Model\McpModel;
 
 /**
  * OAuth service for MCP server authentication
@@ -24,8 +25,36 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class DemoAuthService implements AuthServiceInterface
 {
-    public function validateToken(string $token, ServerRequestInterface $request): ?TokenInfo
+    /**
+     * Constructor.
+     *
+     * @param McpModel $tokenModel Access token model
+     *
+     * @since __DEPLOY_VERSION__
+     */
+    public function __construct(private readonly McpModel $tokenModel)
     {
-        return new TokenInfo((int) $token);
+    }
+
+    /**
+     * Validate an access token
+     *
+     * @param string|null $token Access token
+     * @return TokenInfo|null  The token information. Null if the token is invalid or expired.
+     * @throws \DateMalformedStringException
+     */
+    public function validateToken(?string $token): ?TokenInfo
+    {
+        if ($token === null) {
+            return null;
+        }
+
+        $tokenInfo = $this->tokenModel->getByToken($token);
+
+        if ($tokenInfo === null) {
+            return null;
+        }
+
+        return TokenInfo::fromArray($tokenInfo);
     }
 }

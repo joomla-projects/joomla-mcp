@@ -59,15 +59,13 @@ final class MCP extends CMSPlugin implements SubscriberInterface
         $defaults = [
             'component' => 'com_mcp',
             'public'    => true,
+            'format'    => ['application/json']
         ];
-
-        $router->addRoute(new Route(['GET', 'POST'], 'v1/mcp', 'mcp.jsonRpc', [], $defaults));
-        $router->addRoute(new Route(['GET'], 'v1/mcp/ping', 'mcp.ping', [], $defaults));
 
         # This catch-all route MUST be the last one!
         $router->addRoute(new Route(
             ['GET', 'POST'],
-            'v1/mcp/*route',
+            'v1/mcp',
             'mcp.handle',
             [],
             $defaults

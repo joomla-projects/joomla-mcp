@@ -61,4 +61,21 @@ class AccessTokenModel extends BaseDatabaseModel
             throw new \RuntimeException('Failed to insert access token');
         }
     }
+
+    /**
+     * Get an access token from the database by token
+     *
+     * @param string $token  The token to look up
+     * @return array|null  The access token data or null if not found
+     * @since __DEPLOY_VERSION__
+     */
+    public function getByToken(string $token): ?array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->createQuery();
+        $query->select('*')
+            ->from('#__mcp_access_tokens')
+            ->where('token = ' . $db->quote($token));
+        return $db->setQuery($query)->loadAssoc();
+    }
 }

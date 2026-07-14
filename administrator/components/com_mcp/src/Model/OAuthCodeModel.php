@@ -1,13 +1,14 @@
 <?php
 
-declare(strict_types=1);
 /**
- * @package         Joomla.MCP
- * @subpackage      com_mcp
+ * @package     Joomla.MCP
+ * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Model;
 
@@ -25,15 +26,6 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 class OAuthCodeModel extends BaseDatabaseModel
 {
     /**
-     * Override the legacy error handling behaviour.
-     *
-     * @var bool
-     * @since __DEPLOY_VERSION__
-     *        To be removed in Joomla 7.0
-     */
-    protected $useExceptions = true;
-
-    /**
      * Insert an OAuth code into the database
      *
      * @param   array  $data  The data to insert
@@ -41,7 +33,7 @@ class OAuthCodeModel extends BaseDatabaseModel
      * @return void
      * @since __DEPLOY_VERSION__
      */
-    public function insertOAuthCode(array $data)
+    public function store(array $data): void
     {
         $db     = $this->getDatabase();
         $time   = time();
@@ -72,7 +64,7 @@ class OAuthCodeModel extends BaseDatabaseModel
      * @return array  The data associated with the code
      * @since __DEPLOY_VERSION__
      */
-    public function getOAuthCodeData(string $code, int $time, bool $deleted = false): array
+    public function getByCode(string $code, int $time, bool $deleted = false): array
     {
         $db    = $this->getDatabase();
         $query = $db->createQuery();
@@ -93,13 +85,22 @@ class OAuthCodeModel extends BaseDatabaseModel
      * @return void
      * @since version
      */
-    public function removeAuthCode(int $uid): void
+    public function deleteByUid(int $uid): void
     {
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
         $query->update('#__mcp_oauth_codes')
             ->set('deleted = 1')
             ->where('uid = ' . $uid);
+        $db->setQuery($query)->execute();
+    }
+
+    public function deleteExpired(?int $time = null): void
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+        $query->delete('#__mcp_oauth_codes')
+            ->where('expires < ' . ($time ?? time()));
         $db->setQuery($query)->execute();
     }
 }
