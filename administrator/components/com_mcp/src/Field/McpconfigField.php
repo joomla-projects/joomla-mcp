@@ -80,7 +80,7 @@ class McpconfigField extends FormField
             'mcpServers' => [
                 $serverName => [
                     'type'    => 'streamable-http',
-                    'url'     => $baseUrl . '/index.php/api/v1/mcp',
+                    'url'     => $baseUrl . '/api/index.php/v1/mcp',
                     'headers' => [
                         'Authorization' => 'Bearer ' . $clientToken,
                     ],
@@ -96,7 +96,7 @@ class McpconfigField extends FormField
         $claudeCodeCommand = \sprintf(
             'claude mcp add --transport http %s %s --header "Authorization: Bearer %s"',
             $serverName,
-            $baseUrl . '/index.php/api/v1/mcp',
+            $baseUrl . '/api/index.php/v1/mcp',
             $clientToken
         );
 
