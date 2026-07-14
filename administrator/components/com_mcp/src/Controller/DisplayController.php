@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -8,6 +7,8 @@ declare(strict_types=1);
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Controller;
 

@@ -10,7 +10,9 @@
 
 namespace Joomla\Component\MCP\Administrator\Field;
 
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Form\Field\ListField;
 
