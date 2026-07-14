@@ -25,6 +25,10 @@ use Mcp\Server\Server;
 use Mcp\Server\Transport\Http\FileSessionStore;
 use Mcp\Server\Transport\Http\HttpMessage;
 use Mcp\Server\Transport\Http\StandardPhpAdapter;
+use Mcp\Types\ListResourcesResult;
+use Mcp\Types\ListToolsResult;
+use Mcp\Types\Resource;
+use Mcp\Types\Tool;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -167,22 +171,19 @@ class McpEndpoint
      */
     private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry): void
     {
-        // Register tool/list handler
+        // Register tool/list handler; handlers must return a typed Result object,
+        // plain arrays are silently replaced by an empty result
         $server->registerHandler('tools/list', function () use ($abilityRegistry) {
             $tools = [];
 
             foreach ($abilityRegistry->getTools() as $tool) {
-                $schema = $tool->getSchema();
-
-                $toolDefinition = [
+                $tools[] = Tool::fromArray([
                     'name' => $tool->getName(),
-                    ...$schema,  // Spread the entire schema (description, inputSchema, annotations)
-                ];
-
-                $tools[] = $toolDefinition;
+                    ...$tool->getSchema(),  // Spread the entire schema (description, inputSchema, annotations)
+                ]);
             }
 
-            return ['tools' => $tools];
+            return new ListToolsResult($tools);
         });
 
         // Register tool/call handler
@@ -204,15 +205,15 @@ class McpEndpoint
             $resources = [];
 
             foreach ($abilityRegistry->getResources() as $resource) {
-                $resources[] = [
-                    "uri"         => $resource->getUri(),
-                    "name"        => $resource->getName(),
-                    "title"       => $resource->getTitle(),
-                    "description" => $resource->getDescription(),
-                ];
+                $resources[] = Resource::fromArray([
+                    'uri'         => $resource->getUri(),
+                    'name'        => $resource->getName(),
+                    'title'       => $resource->getTitle(),
+                    'description' => $resource->getDescription(),
+                ]);
             }
 
-            return ['resources' => $resources];
+            return new ListResourcesResult($resources);
         });
 
 
