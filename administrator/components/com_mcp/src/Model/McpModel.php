@@ -141,7 +141,7 @@ class McpModel extends AdminModel
     {
         parent::preprocessForm($form, $data, $group);
 
-        // Sortierliste für das Feld "ordering" generieren
+        // Generate the ordering list for the "ordering" field
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select(['ordering AS value', 'client_name AS text'])
@@ -151,18 +151,15 @@ class McpModel extends AdminModel
         $options = $db->setQuery($query)->loadObjectList();
 
         if ($options) {
-            // Wir holen uns das XML-Element des Feldes
             $element = $form->getFieldXml('ordering');
 
             if ($element) {
                 foreach ($options as $option) {
-                    // Wir fügen die Optionen direkt dem XML-Element hinzu
+                    // Add the options directly to the XML element
                     $element->addChild('option', htmlspecialchars($option->text))
                         ->addAttribute('value', (string) $option->value);
                 }
             }
         }
     }
-
-
 }
