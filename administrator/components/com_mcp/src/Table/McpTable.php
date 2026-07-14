@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Table;
 
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
@@ -28,6 +30,7 @@ class McpTable extends Table implements VersionableTableInterface
      * @var    boolean
      * @since  __DEPLOY_VERSION__
      */
+    //phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
     protected $_supportNullValue = false;
     /**
      * @var int
@@ -242,5 +245,4 @@ class McpTable extends Table implements VersionableTableInterface
         }
         return parent::store($updateNulls);
     }
-
 }
