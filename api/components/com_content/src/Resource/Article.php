@@ -13,6 +13,7 @@ namespace Joomla\Component\Content\Api\Resource;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Description;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
 use Joomla\CMS\WebService\Resource\Resource;
+use Joomla\Component\Content\Api\Resource\Enum\ArticleState;
 
 class Article extends Resource
 {
@@ -27,10 +28,9 @@ class Article extends Resource
         public string $tags,
         #[Description("use * for all languages")]
         public string $language,
-        #[Description("use 1 for published, 0 for unpublished, 2 for archived, -2 for trashed")]
-        public int $state,
+        public ArticleState $state,
         public int $category,
-        public string $images,
+        public ArticleImage $introimage,
         public string $metakey,
         public string $metadesc,
         public string $metadata,
@@ -51,8 +51,8 @@ class Article extends Resource
         public int $hits,
         #[Guarded]
         public int $version,
-        public string $featured_up,
-        public string $featured_down,
+        public ?string $featured_up,
+        public ?string $featured_down,
         public string $urls,
     ) {
     }
