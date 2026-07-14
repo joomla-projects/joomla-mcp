@@ -91,15 +91,15 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered tools
+     * Get a registered tool by name
      *
-     * @return ToolInterface
+     * @return ToolInterface|null
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function getTool($name): ToolInterface
+    public function getTool(string $name): ?ToolInterface
     {
-        return $this->tools[$name];
+        return $this->tools[$name] ?? null;
     }
 
     /**
@@ -115,15 +115,15 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered resource by URI
      *
-     * @return ResourceInterface
+     * @return ResourceInterface|null
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function getResource($uri): ResourceInterface
+    public function getResource(string $uri): ?ResourceInterface
     {
-        return $this->resources[$uri];
+        return $this->resources[$uri] ?? null;
     }
 
     /**
@@ -139,15 +139,15 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered resource template by name
      *
-     * @return ResourceTemplateInterface
+     * @return ResourceTemplateInterface|null
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function getResourceTemplate($name): ResourceTemplateInterface
+    public function getResourceTemplate(string $name): ?ResourceTemplateInterface
     {
-        return $this->resourceTemplates[$name];
+        return $this->resourceTemplates[$name] ?? null;
     }
 
     /**
@@ -163,14 +163,14 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered prompt by name
      *
-     * @return PromptInterface
+     * @return PromptInterface|null
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function getPrompt($name): PromptInterface
+    public function getPrompt(string $name): ?PromptInterface
     {
-        return $this->prompts[$name];
+        return $this->prompts[$name] ?? null;
     }
 }
