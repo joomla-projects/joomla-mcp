@@ -40,7 +40,6 @@ class Language extends Resource
         public string $access_level,
         #[Description("use 1 if default language, 0 otherwise")]
         public int $home,
-    )
-    {
+    ) {
     }
 }

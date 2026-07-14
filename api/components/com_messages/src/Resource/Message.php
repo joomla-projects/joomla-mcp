@@ -31,7 +31,6 @@ class Message extends Resource
         public int $state,
         #[Guarded]
         public string $user_from,
-    )
-    {
+    ) {
     }
 }

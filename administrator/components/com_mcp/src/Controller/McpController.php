@@ -1,13 +1,15 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use Joomla\CMS\MVC\Controller\FormController;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Application\ApplicationHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Controller\FormController;
+use Joomla\CMS\Router\Route;
 
 /**
  * MCP Controller for a single record.
@@ -36,9 +38,9 @@ class McpController extends FormController
         // Check for request forgeries.
         $this->checkToken();
 
-        $app = $this->app;
+        $app   = $this->app;
         $model = $this->getModel();
-        $id = $app->getInput()->getInt('id');
+        $id    = $app->getInput()->getInt('id');
 
         if (!$id) {
             $app->enqueueMessage(Text::_('COM_MCP_ERROR_INVALID_ID'), 'error');
@@ -60,7 +62,7 @@ class McpController extends FormController
 
         // Update the token in the database
         $data = [
-            'id' => $id,
+            'id'           => $id,
             'client_token' => $newToken,
         ];
 

@@ -35,7 +35,6 @@ class User extends Resource
         public int $sendEmail,
         #[Description("use 0 for unblocked, 1 for blocked")]
         public int $block,
-    )
-    {
+    ) {
     }
 }

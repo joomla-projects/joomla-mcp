@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\AdminModel;
@@ -140,7 +142,7 @@ class McpModel extends AdminModel
         parent::preprocessForm($form, $data, $group);
 
         // Sortierliste für das Feld "ordering" generieren
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select(['ordering AS value', 'client_name AS text'])
             ->from($db->quoteName('#__mcp'))

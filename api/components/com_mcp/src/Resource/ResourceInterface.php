@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -13,7 +15,6 @@ namespace Joomla\Component\MCP\Api\Resource;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Mcp\Types\ReadResourceRequest;
 use Mcp\Types\ReadResourceResult;
 
 interface ResourceInterface

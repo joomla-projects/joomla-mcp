@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      plg_webservices_mcp
@@ -22,7 +24,7 @@ return new class () implements ServiceProviderInterface {
     {
         $container->set(
             PluginInterface::class,
-            function(Container $container) {
+            function (Container $container) {
                 $config = (array) PluginHelper::getPlugin('webservices', 'mcp');
 
                 return new MCP($config);

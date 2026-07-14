@@ -49,7 +49,6 @@ class Module extends Resource
         public string $assigned,
         public string $assignment,
         public string $xml,
-    )
-    {
+    ) {
     }
 }

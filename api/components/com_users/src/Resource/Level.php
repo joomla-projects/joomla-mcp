@@ -20,7 +20,6 @@ class Level extends Resource
         public int $id,
         public string $title,
         public string $rules,
-    )
-    {
+    ) {
     }
 }

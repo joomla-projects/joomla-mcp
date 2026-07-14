@@ -10,7 +10,7 @@
 
 namespace Joomla\Component\MCP\Administrator\View\Mcps;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\MVC\View\ListView;
@@ -42,8 +42,8 @@ class HtmlView extends ListView
             $config['option'] = 'com_mcp';
         }
 
-        $config['toolbar_title'] = 'COM_MCP';
-        $config['toolbar_icon']  = 'cog mcp';
+        $config['toolbar_title']  = 'COM_MCP';
+        $config['toolbar_icon']   = 'cog mcp';
         $config['supports_batch'] = false;
 
         parent::__construct($config);

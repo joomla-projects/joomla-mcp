@@ -10,7 +10,7 @@
 
 namespace Joomla\Component\MCP\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
@@ -110,16 +110,16 @@ class McpsModel extends ListModel
 
         if (!empty($username)) {
             // Handle single value
-            if (is_string($username) && $username !== '') {
+            if (\is_string($username) && $username !== '') {
                 $query->where($db->quoteName('a.username') . ' = :username')
                     ->bind(':username', $username);
-            } elseif (is_array($username)) {
+            } elseif (\is_array($username)) {
                 // Remove empty values from array
-                $username = array_filter($username, fn($val) => !empty($val) && is_string($val));
+                $username = array_filter($username, fn ($val) => !empty($val) && \is_string($val));
 
                 if (!empty($username)) {
                     // Quote each username for safe SQL inclusion
-                    $quotedUsernames = array_map(fn($u) => $db->quote($u), $username);
+                    $quotedUsernames = array_map(fn ($u) => $db->quote($u), $username);
                     $query->where($db->quoteName('a.username') . ' IN (' . implode(',', $quotedUsernames) . ')');
                 }
             }

@@ -56,7 +56,6 @@ class Newsfeed extends Resource
         public int $hits,
         public string $images,
         public string $tags,
-    )
-    {
+    ) {
     }
 }

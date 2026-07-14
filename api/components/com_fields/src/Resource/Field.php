@@ -54,7 +54,6 @@ class Field extends Resource
         public int $modified_by,
         public int $access,
         public string $assigned_cat_ids,
-    )
-    {
+    ) {
     }
 }

@@ -34,7 +34,6 @@ class Redirect extends Resource
         public string $modified_date,
         #[Description("HTTP status code for redirect (301, 302, etc.)")]
         public int $header,
-    )
-    {
+    ) {
     }
 }

@@ -39,7 +39,6 @@ class Client extends Resource
         public int $track_clicks,
         #[Description("use -1 for global, 0 for no, 1 for yes")]
         public int $track_impressions,
-    )
-    {
+    ) {
     }
 }

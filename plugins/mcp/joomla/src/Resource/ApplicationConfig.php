@@ -9,8 +9,6 @@ use Joomla\Component\Config\Api\Resource\ApplicationConfig as ConfigDTO;
 use Joomla\Component\MCP\Api\Resource\ResourceInterface;
 use Mcp\Types\ReadResourceResult;
 use Mcp\Types\TextResourceContents;
-use ReflectionClass;
-use ReflectionProperty;
 
 class ApplicationConfig implements ResourceInterface
 {
@@ -45,10 +43,10 @@ class ApplicationConfig implements ResourceInterface
      */
     private function getAllowedFields(): array
     {
-        $reflection = new ReflectionClass(ConfigDTO::class);
+        $reflection    = new \ReflectionClass(ConfigDTO::class);
         $allowedFields = [];
 
-        foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
             $attributes = $property->getAttributes(Guarded::class);
             if (empty($attributes)) {
                 $allowedFields[] = $property->getName();
@@ -70,10 +68,10 @@ class ApplicationConfig implements ResourceInterface
 
         // Whitelist approach: only include fields defined in DTO without #[Guarded]
         $allowedFields = $this->getAllowedFields();
-        $filteredData = [];
+        $filteredData  = [];
 
         foreach ($allowedFields as $field) {
-            if (array_key_exists($field, $data)) {
+            if (\array_key_exists($field, $data)) {
                 $filteredData[$field] = $data[$field];
             }
         }
@@ -87,7 +85,7 @@ class ApplicationConfig implements ResourceInterface
                     uri: $this->getUri(),
                     text: $jsonData,
                     mimeType: $this->getMimeType(),
-                )
+                ),
             ]
         );
     }

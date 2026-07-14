@@ -20,7 +20,6 @@ class Override extends Resource
         public string $id,
         #[Description("Overridden translation value")]
         public string $value,
-    )
-    {
+    ) {
     }
 }

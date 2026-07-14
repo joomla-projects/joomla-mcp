@@ -10,10 +10,9 @@
 
 namespace Joomla\Component\MCP\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\Field\ListField;
-use Joomla\Database\ParameterType;
 
 /**
  * Form Field to load a list of users that have MCP clients

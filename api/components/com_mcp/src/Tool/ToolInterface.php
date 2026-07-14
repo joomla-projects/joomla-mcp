@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @package         Joomla.MCP
  * @subpackage      com_mcp
@@ -22,32 +24,32 @@ use Mcp\Types\CallToolResult;
  */
 interface ToolInterface
 {
-	/**
-	 * Get the tool name
-	 *
-	 * @return string
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function getName(): string;
+    /**
+     * Get the tool name
+     *
+     * @return string
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function getName(): string;
 
-	/**
-	 * Get the tool schema (JSON Schema format)
-	 *
-	 * @return array
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function getSchema(): array;
+    /**
+     * Get the tool schema (JSON Schema format)
+     *
+     * @return array
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function getSchema(): array;
 
-	/**
-	 * Execute the tool with the given parameters
-	 *
-	 * @param array $params  The tool parameters
-	 *
-	 * @return CallToolResult  The tool result
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function execute(array $params): CallToolResult;
+    /**
+     * Execute the tool with the given parameters
+     *
+     * @param array $params  The tool parameters
+     *
+     * @return CallToolResult  The tool result
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function execute(array $params): CallToolResult;
 }

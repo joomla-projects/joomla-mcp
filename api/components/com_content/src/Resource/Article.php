@@ -54,7 +54,6 @@ class Article extends Resource
         public string $featured_up,
         public string $featured_down,
         public string $urls,
-    )
-    {
+    ) {
     }
 }

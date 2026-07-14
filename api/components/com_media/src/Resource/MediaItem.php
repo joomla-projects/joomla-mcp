@@ -53,7 +53,6 @@ class MediaItem extends Resource
         public string $url,
         #[Description("Temporary URL for restricted access")]
         public string $tempUrl,
-    )
-    {
+    ) {
     }
 }

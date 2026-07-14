@@ -28,7 +28,6 @@ class Request extends Resource
         public int $status,
         #[Description("Request type: export or remove")]
         public string $request_type,
-    )
-    {
+    ) {
     }
 }

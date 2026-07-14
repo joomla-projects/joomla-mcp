@@ -45,7 +45,6 @@ class FieldGroup extends Resource
         public int $modified_by,
         public int $access,
         public string $type,
-    )
-    {
+    ) {
     }
 }

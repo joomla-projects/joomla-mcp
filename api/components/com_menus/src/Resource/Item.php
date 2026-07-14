@@ -58,7 +58,6 @@ class Item extends Resource
         public string $associations,
         #[Guarded]
         public int $menuordering,
-    )
-    {
+    ) {
     }
 }

@@ -61,7 +61,6 @@ class Tag extends Resource
         public int $version,
         public string $publish_up,
         public string $publish_down,
-    )
-    {
+    ) {
     }
 }

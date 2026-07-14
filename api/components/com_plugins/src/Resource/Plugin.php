@@ -45,7 +45,6 @@ class Plugin extends Resource
         public int $ordering,
         #[Description("use 1 for enabled, 0 for disabled")]
         public int $state,
-    )
-    {
+    ) {
     }
 }

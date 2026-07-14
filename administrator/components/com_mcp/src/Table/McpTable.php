@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
@@ -140,7 +142,7 @@ class McpTable extends Table implements VersionableTableInterface
     public function bind($src, $ignore = [])
     {
         if (isset($src['params']) && \is_array($src['params'])) {
-            $registry = new Registry($src['params']);
+            $registry      = new Registry($src['params']);
             $src['params'] = (string) $registry;
         }
 
@@ -211,7 +213,7 @@ class McpTable extends Table implements VersionableTableInterface
     {
         if (parent::load($keys, $reset)) {
             if (\is_string($this->params)) {
-                $registry = new Registry($this->params);
+                $registry     = new Registry($this->params);
                 $this->params = $registry->toArray();
             }
 

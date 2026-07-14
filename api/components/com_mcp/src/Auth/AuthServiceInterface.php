@@ -16,7 +16,6 @@ namespace Joomla\Component\MCP\Api\Auth;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Mcp\Server\Transport\Http\HttpMessage;
 
 /**
  * Authorisation service interface

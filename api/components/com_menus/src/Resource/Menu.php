@@ -28,7 +28,6 @@ class Menu extends Resource
         public int $count_unpublished,
         #[Guarded]
         public int $count_trashed,
-    )
-    {
+    ) {
     }
 }

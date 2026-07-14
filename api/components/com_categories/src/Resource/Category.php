@@ -60,7 +60,6 @@ class Category extends Resource
         public int $count_archived,
         public string $params,
         public string $description,
-    )
-    {
+    ) {
     }
 }

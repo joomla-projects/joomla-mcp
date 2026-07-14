@@ -36,12 +36,11 @@ use Psr\Log\NullLogger;
  */
 class McpEndpoint
 {
+    use CurrentUserTrait;
     /**
      * @since __DEPLOY_VERSION__
      */
     private LoggerInterface $logger;
-
-    use CurrentUserTrait;
 
     /**
      * Constructor.
@@ -206,10 +205,10 @@ class McpEndpoint
 
             foreach ($abilityRegistry->getResources() as $resource) {
                 $resources[] = [
-                    "uri" => $resource->getUri(),
-                    "name" => $resource->getName(),
-                    "title" => $resource->getTitle(),
-                    "description" => $resource->getDescription()
+                    "uri"         => $resource->getUri(),
+                    "name"        => $resource->getName(),
+                    "title"       => $resource->getTitle(),
+                    "description" => $resource->getDescription(),
                 ];
             }
 

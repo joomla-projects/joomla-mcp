@@ -31,7 +31,6 @@ class Consent extends Resource
         public string $token,
         #[Guarded]
         public string $username,
-    )
-    {
+    ) {
     }
 }

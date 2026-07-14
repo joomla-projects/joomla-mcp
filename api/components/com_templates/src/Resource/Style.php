@@ -27,7 +27,6 @@ class Style extends Resource
         public string $title,
         public string $params,
         public string $xml,
-    )
-    {
+    ) {
     }
 }

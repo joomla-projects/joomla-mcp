@@ -206,7 +206,6 @@ class ApplicationConfig extends Resource
         // Behind Load Balancer
         #[Description("use 1 if behind load balancer, 0 for direct")]
         public int $behind_loadbalancer,
-    )
-    {
+    ) {
     }
 }

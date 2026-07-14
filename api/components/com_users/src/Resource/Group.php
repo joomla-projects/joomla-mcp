@@ -24,7 +24,6 @@ class Group extends Resource
         #[Guarded]
         public int $rgt,
         public string $title,
-    )
-    {
+    ) {
     }
 }

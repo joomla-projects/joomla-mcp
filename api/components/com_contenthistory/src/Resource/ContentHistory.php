@@ -40,7 +40,6 @@ class ContentHistory extends Resource
         public int $keep_forever,
         #[Guarded]
         public string $editor,
-    )
-    {
+    ) {
     }
 }

@@ -45,8 +45,6 @@ class Banner extends Resource
         public int $state,
         #[Description("use * for all languages")]
         public string $language,
-
-    )
-    {
+    ) {
     }
 }

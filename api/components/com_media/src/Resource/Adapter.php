@@ -22,7 +22,6 @@ class Adapter extends Resource
         public string $name,
         #[Description("Root path for this adapter")]
         public string $path,
-    )
-    {
+    ) {
     }
 }

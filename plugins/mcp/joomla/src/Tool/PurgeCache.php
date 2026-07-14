@@ -10,7 +10,6 @@ use Mcp\Types\TextContent;
 
 class PurgeCache implements ToolInterface
 {
-
     public function getName(): string
     {
         return "purgeCache";
@@ -20,8 +19,8 @@ class PurgeCache implements ToolInterface
     {
         return [
             "inputSchema" => [
-                "type" => "object"
-            ]
+                "type" => "object",
+            ],
         ];
     }
 
@@ -37,7 +36,7 @@ class PurgeCache implements ToolInterface
             if (!$mCache->clean($cache->group)) {
                 return new CallToolResult(
                     [
-                        new TextContent(Text::sprintf('PLG_MCP_JOOMLA_PURGE_CACHE_ERROR', $cache->group))
+                        new TextContent(Text::sprintf('PLG_MCP_JOOMLA_PURGE_CACHE_ERROR', $cache->group)),
                     ],
                     true
                 );
@@ -46,7 +45,7 @@ class PurgeCache implements ToolInterface
 
         return new CallToolResult(
             [
-                new TextContent(Text::_('PLG_MCP_JOOMLA_PURGE_CACHE_SUCCESS'))
+                new TextContent(Text::_('PLG_MCP_JOOMLA_PURGE_CACHE_SUCCESS')),
             ]
         );
     }

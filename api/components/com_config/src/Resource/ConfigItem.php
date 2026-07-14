@@ -24,7 +24,6 @@ class ConfigItem extends Resource
         public string $key,
         #[Description("Configuration value (can be string, int, bool, or array)")]
         public mixed $value,
-    )
-    {
+    ) {
     }
 }

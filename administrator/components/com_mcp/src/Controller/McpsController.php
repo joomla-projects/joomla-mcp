@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\AdminController;
 

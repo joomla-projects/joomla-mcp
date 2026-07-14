@@ -10,7 +10,6 @@
 
 namespace Joomla\Component\Contact\Api\Resource;
 
-use Joomla\CMS\WebService\Resource\Attribute\Property\Description;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
 use Joomla\CMS\WebService\Resource\Resource;
 
@@ -59,7 +58,6 @@ class Contact extends Resource
         public string $sortname1,
         public string $sortname2,
         public string $sortname3,
-    )
-    {
+    ) {
     }
 }
