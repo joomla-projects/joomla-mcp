@@ -148,10 +148,10 @@ class McpEndpoint
 
             return null;
         } catch (\Throwable $e) {
-            return new JsonResponse(json_encode([
+            return new JsonResponse([
                 'error'   => 'Internal Server Error',
                 'message' => $e->getMessage(),
-            ]), 500);
+            ], 500);
         }
     }
 
@@ -267,10 +267,10 @@ class McpEndpoint
      */
     private function createUnauthorizedResponse(string $message): ResponseInterface
     {
-        return new JsonResponse(json_encode([
+        return new JsonResponse([
             'error'   => 'Unauthorized',
             'message' => $message,
-        ]), 401);
+        ], 401);
     }
 
     /**
