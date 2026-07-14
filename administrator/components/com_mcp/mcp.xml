@@ -31,6 +31,7 @@
             <folder>services</folder>
 			<folder>sql</folder>
             <folder>src</folder>
+            <folder>tmpl</folder>
         </files>
 
         <languages folder="admin/language">
