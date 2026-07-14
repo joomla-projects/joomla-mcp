@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
 class McpEndpoint
 {
     use CurrentUserTrait;
+
     /**
      * @since __DEPLOY_VERSION__
      */
