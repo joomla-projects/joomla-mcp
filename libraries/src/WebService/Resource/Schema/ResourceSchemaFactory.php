@@ -103,7 +103,7 @@ final class ResourceSchemaFactory
 
             $properties[$property->getName()] = $schema;
 
-            if ($this->isRequired($property, $profile, $isResource)) {
+            if ($this->isRequired($property, $profile)) {
                 $required[] = $property->getName();
             }
         }
@@ -125,7 +125,7 @@ final class ResourceSchemaFactory
         return $schema;
     }
 
-    private function isRequired(\ReflectionProperty $property, string $profile, bool $isResource): bool
+    private function isRequired(\ReflectionProperty $property, string $profile): bool
     {
         $required = $this->firstAttribute($property, Required::class);
         $optional = $this->firstAttribute($property, Optional::class);
@@ -136,10 +136,6 @@ final class ResourceSchemaFactory
 
         if ($optional instanceof Optional && $optional->appliesTo($profile)) {
             return false;
-        }
-
-        if (!$isResource) {
-            return !$property->hasDefaultValue();
         }
 
         return match ($profile) {
@@ -224,7 +220,9 @@ final class ResourceSchemaFactory
             ];
         }
 
-        if (is_a($typeName, ResourceInterface::class, true)) {
+        // A nested contract class is described by the same conventions. It need not be a Resource itself: a plain
+        // value object such as ArticleUrls carries no identity and no guarded state, only typed properties.
+        if (class_exists($typeName)) {
             return $this->create($typeName, $profile);
         }
 

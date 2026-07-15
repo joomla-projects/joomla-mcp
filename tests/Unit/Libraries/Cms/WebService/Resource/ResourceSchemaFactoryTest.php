@@ -50,6 +50,42 @@ final class ResourceSchemaFactoryTest extends TestCase
         self::assertSame('date-time', $schema['properties']['created']['format']);
     }
 
+    public function testNestedValueObjectsAreExpandedIntoTheSchema(): void
+    {
+        $urls = (new ResourceSchemaFactory())
+            ->create(Article::class, ResourceProfile::CREATE)['properties']['urls'];
+
+        self::assertSame('object', $urls['type']);
+        self::assertSame('string', $urls['properties']['targeta']['type']);
+        self::assertSame('0', $urls['properties']['targeta']['example']);
+        self::assertArrayHasKey('description', $urls['properties']['urla']);
+    }
+
+    public function testNestedValueObjectsHonourTheProfileConvention(): void
+    {
+        $factory = new ResourceSchemaFactory();
+
+        // Every article url slot has a default, so a create never demands one.
+        $create = $factory->create(Article::class, ResourceProfile::CREATE)['properties']['urls'];
+        self::assertArrayHasKey('urla', $create['properties']);
+        self::assertArrayNotHasKey('required', $create);
+
+        $update = $factory->create(Article::class, ResourceProfile::UPDATE)['properties']['urls'];
+        self::assertArrayHasKey('urla', $update['properties']);
+        self::assertArrayNotHasKey('required', $update);
+    }
+
+    public function testANestedPropertyWithoutADefaultIsRequiredOnCreateOnly(): void
+    {
+        $factory = new ResourceSchemaFactory();
+        $stub    = NestedValueObjectStub::class;
+
+        self::assertSame(['mandatory'], $factory->create($stub, ResourceProfile::CREATE)['required']);
+
+        // A patch is partial, so nothing is mandatory.
+        self::assertArrayNotHasKey('required', $factory->create($stub, ResourceProfile::UPDATE));
+    }
+
     public function testCategoryIsWrittenAsAnIdentifierAndReadAsAnObject(): void
     {
         $factory = new ResourceSchemaFactory();
