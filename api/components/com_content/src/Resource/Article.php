@@ -28,6 +28,7 @@ class Article extends Resource
         public array $tags,
         #[Description("use * for all languages")]
         public string $language,
+        #[Description("use 1 for published, 0 for unpublished, 2 for archived, -2 for trashed")]
         public ArticleState $state,
         public int $category,
         public ArticleImage $images,
