@@ -21,7 +21,11 @@ use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\CMS\User\UserFactoryInterface;
+use Joomla\Component\MCP\Api\Auth\ChainAuthService;
 use Joomla\Component\MCP\Api\Auth\DemoAuthService;
+use Joomla\Component\MCP\Api\Auth\JCraftsOAuth2AuthService;
+use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 
@@ -50,7 +54,17 @@ return new class () implements ServiceProviderInterface {
             function (Container $container) {
                 $mvcFactory       = $container->get(MVCFactoryInterface::class);
                 $accessTokenModel = $mvcFactory->createModel('Mcp');
-                Factory::$application->set('mcp.authService', new DemoAuthService($accessTokenModel));
+
+                Factory::$application->set(
+                    'mcp.authService',
+                    new ChainAuthService(
+                        new JCraftsOAuth2AuthService(
+                            $container->get(DatabaseInterface::class),
+                            $container->get(UserFactoryInterface::class)
+                        ),
+                        new DemoAuthService($accessTokenModel)
+                    )
+                );
                 $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
                 $component->setMVCFactory($mvcFactory);
 

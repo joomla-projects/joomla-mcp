@@ -30,6 +30,29 @@ class TokenInfo
     public string $last_used_ip;
 
     /**
+     * Create a token info object from a validated OAuth2 access token
+     *
+     * @param int    $userid     Joomla user ID the token was issued to
+     * @param string $clientName Name of the OAuth2 client the token was issued to
+     * @return TokenInfo
+     */
+    public static function fromOAuth2(int $userid, string $clientName = ''): self
+    {
+        $tokenInfo               = new self();
+        $tokenInfo->pid          = 0;
+        $tokenInfo->tstamp       = new \DateTime('now');
+        $tokenInfo->crdate       = new \DateTime('now');
+        $tokenInfo->token        = '';
+        $tokenInfo->userid       = $userid;
+        $tokenInfo->client_name  = $clientName;
+        $tokenInfo->expires      = new \DateTime('now');
+        $tokenInfo->last_used    = new \DateTime('now');
+        $tokenInfo->created_ip   = '';
+        $tokenInfo->last_used_ip = '';
+        return $tokenInfo;
+    }
+
+    /**
      * Create a token info object from an array
      *
      * @param array $data

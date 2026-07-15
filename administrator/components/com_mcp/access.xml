@@ -40,5 +40,11 @@
             name="core.edit.own"
             title="JACTION_EDITOWN"
         />
+
+        <action
+            name="mcp.access"
+            title="COM_MCP_ACTION_ACCESS"
+            description="COM_MCP_ACTION_ACCESS_DESC"
+        />
     </section>
 </access>
