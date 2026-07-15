@@ -39,7 +39,7 @@ class HtmlView extends BaseHtmlView
 
         // Add regenerate token button for existing items
         if (!$isNew) {
-            $toolbar = Factory::getContainer()->get(ToolbarFactoryInterface::class)->createToolbar();
+            $toolbar = $this->getDocument()->getToolbar();
             $toolbar->standardButton('refresh', 'COM_MCP_TOOLBAR_REGENERATE_TOKEN', 'mcp.regenerateToken')
                 ->icon('icon-refresh')
                 ->listCheck(false);
