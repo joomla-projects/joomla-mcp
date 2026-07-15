@@ -1,13 +1,14 @@
 <?php
 
-declare(strict_types=1);
 /**
- * @package         Joomla.MCP
+ * @package         Joomla.API
  * @subpackage      com_mcp
  *
- * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @copyright       (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Api\Exception;
 

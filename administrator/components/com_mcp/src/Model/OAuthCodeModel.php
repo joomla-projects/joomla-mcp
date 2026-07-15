@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @package     Joomla.MCP
+ * @package     Joomla.Administrator
  * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
