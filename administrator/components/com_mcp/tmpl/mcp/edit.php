@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Joomla.Administrator
  * @subpackage      com_mcp
@@ -7,7 +8,9 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die;
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -15,7 +18,6 @@ use Joomla\CMS\Router\Route;
 
 /** @var \Joomla\Component\MCP\Administrator\View\Mcp\HtmlView $this */
 
-// Validierung und Verhaltensweisen laden
 HTMLHelper::_('behavior.formvalidator');
 HTMLHelper::_('behavior.keepalive');
 

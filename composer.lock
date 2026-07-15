@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ffb51e5b4af3ec18cf2395f255dd40f5",
+    "content-hash": "3e62199a32a6ac9c3a05dcaf41833419",
     "packages": [
         {
             "name": "algo26-matthias/idna-convert",
@@ -2537,16 +2537,16 @@
         },
         {
             "name": "logiscape/mcp-sdk-php",
-            "version": "v1.2.0",
+            "version": "v2.0.0-beta3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/logiscape/mcp-sdk-php.git",
-                "reference": "f3db17913f36d649b97a3554b2e9c743d17cde2d"
+                "reference": "364e547291d2db5c0e20dfb2ef41de31db82be31"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/logiscape/mcp-sdk-php/zipball/f3db17913f36d649b97a3554b2e9c743d17cde2d",
-                "reference": "f3db17913f36d649b97a3554b2e9c743d17cde2d",
+                "url": "https://api.github.com/repos/logiscape/mcp-sdk-php/zipball/364e547291d2db5c0e20dfb2ef41de31db82be31",
+                "reference": "364e547291d2db5c0e20dfb2ef41de31db82be31",
                 "shasum": ""
             },
             "require": {
@@ -2556,6 +2556,7 @@
                 "psr/log": "^2.0 ||^3.0"
             },
             "require-dev": {
+                "phpstan/phpstan": "^1.10",
                 "phpunit/phpunit": "^10.0"
             },
             "suggest": {
@@ -2575,9 +2576,9 @@
             "description": "Model Context Protocol SDK for PHP",
             "support": {
                 "issues": "https://github.com/logiscape/mcp-sdk-php/issues",
-                "source": "https://github.com/logiscape/mcp-sdk-php/tree/v1.2.0"
+                "source": "https://github.com/logiscape/mcp-sdk-php/tree/v2.0.0-beta3"
             },
-            "time": "2025-06-12T19:08:29+00:00"
+            "time": "2026-07-05T07:30:27+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",
@@ -9767,6 +9768,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "logiscape/mcp-sdk-php": 10,
         "tobscure/json-api": 20
     },
     "prefer-stable": false,
@@ -9778,9 +9780,9 @@
         "ext-gd": "*",
         "ext-dom": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "platform-overrides": {
         "php": "8.3.0"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

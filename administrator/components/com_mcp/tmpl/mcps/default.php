@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Joomla.Administrator
  * @subpackage      com_mcp
@@ -7,7 +8,9 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die;
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -76,9 +79,9 @@ if ($saveOrder && !empty($this->items)) {
                         </thead>
                         <tbody <?php if ($saveOrder) :
                             ?> class="js-draggable" data-url="<?php echo $saveOrderingUrl; ?>" data-direction="<?php echo strtolower($listDirn); ?>"<?php
-                        endif; ?>>
+                               endif; ?>>
                         <?php foreach ($this->items as $i => $item) :
-                            $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
+                            $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || \is_null($item->checked_out);
                             $canChange  = $user->authorise('core.edit.state', 'com_mcp') && $canCheckin;
                             $canEdit    = $user->authorise('core.edit', 'com_mcp');
                             ?>

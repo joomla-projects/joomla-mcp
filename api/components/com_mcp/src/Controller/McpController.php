@@ -52,9 +52,7 @@ final class McpController extends BaseController
 
         $result = $endpoint->handle($request);
 
-        if ($result !== null) {
-            $this->sendResponse($result);
-        }
+        $this->sendResponse($result);
         $this->app->close();
     }
 
@@ -79,7 +77,7 @@ final class McpController extends BaseController
      */
     private function sendResponse(ResponseInterface $response): void
     {
-        http_response_code($response->getStatusCode() ?? 200);
+        http_response_code($response->getStatusCode());
 
         foreach ($response->getHeaders() as $name => $value) {
             if (\is_array($value)) {

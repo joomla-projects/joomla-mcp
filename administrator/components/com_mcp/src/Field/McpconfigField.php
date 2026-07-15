@@ -10,7 +10,9 @@
 
 namespace Joomla\Component\MCP\Administrator\Field;
 
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
@@ -80,7 +82,7 @@ class McpconfigField extends FormField
             'mcpServers' => [
                 $serverName => [
                     'type'    => 'streamable-http',
-                    'url'     => $baseUrl . '/index.php/api/v1/mcp',
+                    'url'     => $baseUrl . '/api/index.php/v1/mcp',
                     'headers' => [
                         'Authorization' => 'Bearer ' . $clientToken,
                     ],
@@ -96,7 +98,7 @@ class McpconfigField extends FormField
         $claudeCodeCommand = \sprintf(
             'claude mcp add --transport http %s %s --header "Authorization: Bearer %s"',
             $serverName,
-            $baseUrl . '/index.php/api/v1/mcp',
+            $baseUrl . '/api/index.php/v1/mcp',
             $clientToken
         );
 
