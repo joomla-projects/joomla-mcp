@@ -10,6 +10,7 @@
 
 namespace Joomla\Tests\Unit\Libraries\Cms\Mcp\Resource;
 
+use Joomla\CMS\Mcp\Content\ResourceContents;
 use Joomla\CMS\Mcp\Resource\ResourceResult;
 use Joomla\Tests\Unit\UnitTestCase;
 
@@ -23,6 +24,20 @@ use Joomla\Tests\Unit\UnitTestCase;
 class ResourceResultTest extends UnitTestCase
 {
     /**
+     * Get the wire format of all content items of a result
+     *
+     * @param ResourceResult $result  The result to convert
+     *
+     * @return  array
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toWireFormat(ResourceResult $result): array
+    {
+        return array_map(static fn ($item) => $item->toArray(), $result->getContents());
+    }
+
+    /**
      * @return  void
      *
      * @since   __DEPLOY_VERSION__
@@ -31,9 +46,11 @@ class ResourceResultTest extends UnitTestCase
     {
         $result = ResourceResult::text('joomla://config', '{"sitename":"Test"}', 'application/json');
 
+        $this->assertCount(1, $result->getContents());
+        $this->assertInstanceOf(ResourceContents::class, $result->getContents()[0]);
         $this->assertSame(
             [['uri' => 'joomla://config', 'text' => '{"sitename":"Test"}', 'mimeType' => 'application/json']],
-            $result->getContents()
+            $this->toWireFormat($result)
         );
     }
 
@@ -48,7 +65,7 @@ class ResourceResultTest extends UnitTestCase
 
         $this->assertSame(
             [['uri' => 'joomla://info', 'text' => 'hello', 'mimeType' => 'text/plain']],
-            $result->getContents()
+            $this->toWireFormat($result)
         );
     }
 
@@ -63,7 +80,28 @@ class ResourceResultTest extends UnitTestCase
 
         $this->assertSame(
             [['uri' => 'joomla://media/logo.png', 'blob' => 'YmxvYg==', 'mimeType' => 'image/png']],
-            $result->getContents()
+            $this->toWireFormat($result)
+        );
+    }
+
+    /**
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testFromContentsAcceptsMultipleItems(): void
+    {
+        $result = ResourceResult::fromContents(
+            ResourceContents::text('joomla://config', '{}', 'application/json'),
+            ResourceContents::blob('joomla://media/logo.png', 'YmxvYg==', 'image/png')
+        );
+
+        $this->assertSame(
+            [
+                ['uri' => 'joomla://config', 'text' => '{}', 'mimeType' => 'application/json'],
+                ['uri' => 'joomla://media/logo.png', 'blob' => 'YmxvYg==', 'mimeType' => 'image/png'],
+            ],
+            $this->toWireFormat($result)
         );
     }
 }

@@ -13,6 +13,14 @@ namespace Joomla\CMS\Mcp\Tool;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Mcp\Content\AudioContent;
+use Joomla\CMS\Mcp\Content\ContentInterface;
+use Joomla\CMS\Mcp\Content\EmbeddedResource;
+use Joomla\CMS\Mcp\Content\ImageContent;
+use Joomla\CMS\Mcp\Content\ResourceContents;
+use Joomla\CMS\Mcp\Content\ResourceLink;
+use Joomla\CMS\Mcp\Content\TextContent;
+
 /**
  * Result of an MCP tool execution.
  *
@@ -24,46 +32,11 @@ namespace Joomla\CMS\Mcp\Tool;
 final readonly class ToolResult
 {
     /**
-     * Content type for plain text items
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public const string TYPE_TEXT = 'text';
-
-    /**
-     * Content type for image items
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public const string TYPE_IMAGE = 'image';
-
-    /**
-     * Content type for audio items
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public const string TYPE_AUDIO = 'audio';
-
-    /**
-     * Content type for embedded resource items
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public const string TYPE_RESOURCE = 'resource';
-
-    /**
-     * Content type for resource link items
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public const string TYPE_RESOURCE_LINK = 'resource_link';
-
-    /**
      * Constructor.
      *
-     * @param array   $content            List of content items, each ['type' => self::TYPE_*, ...]
-     * @param boolean $error              Whether the result represents an error
-     * @param mixed   $structuredContent  Structured output matching the tool's output schema
+     * @param ContentInterface[] $content            List of content items
+     * @param boolean            $error              Whether the result represents an error
+     * @param mixed              $structuredContent  Structured output matching the tool's output schema
      *
      * @since  __DEPLOY_VERSION__
      */
@@ -72,6 +45,20 @@ final readonly class ToolResult
         private bool $error,
         private mixed $structuredContent = null
     ) {
+    }
+
+    /**
+     * Create a successful result from one or more content items
+     *
+     * @param ContentInterface ...$content  The content items
+     *
+     * @return self
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public static function fromContent(ContentInterface ...$content): self
+    {
+        return new self(array_values($content), false);
     }
 
     /**
@@ -85,7 +72,7 @@ final readonly class ToolResult
      */
     public static function text(string $text): self
     {
-        return new self([['type' => self::TYPE_TEXT, 'text' => $text]], false);
+        return new self([new TextContent($text)], false);
     }
 
     /**
@@ -99,7 +86,7 @@ final readonly class ToolResult
      */
     public static function error(string $text): self
     {
-        return new self([['type' => self::TYPE_TEXT, 'text' => $text]], true);
+        return new self([new TextContent($text)], true);
     }
 
     /**
@@ -117,11 +104,7 @@ final readonly class ToolResult
      */
     public static function structured(mixed $data, ?string $text = null): self
     {
-        return new self(
-            [['type' => self::TYPE_TEXT, 'text' => $text ?? json_encode($data)]],
-            false,
-            $data
-        );
+        return new self([new TextContent($text ?? json_encode($data))], false, $data);
     }
 
     /**
@@ -136,7 +119,7 @@ final readonly class ToolResult
      */
     public static function image(string $data, string $mimeType): self
     {
-        return new self([['type' => self::TYPE_IMAGE, 'data' => $data, 'mimeType' => $mimeType]], false);
+        return new self([new ImageContent($data, $mimeType)], false);
     }
 
     /**
@@ -151,7 +134,7 @@ final readonly class ToolResult
      */
     public static function audio(string $data, string $mimeType): self
     {
-        return new self([['type' => self::TYPE_AUDIO, 'data' => $data, 'mimeType' => $mimeType]], false);
+        return new self([new AudioContent($data, $mimeType)], false);
     }
 
     /**
@@ -168,17 +151,7 @@ final readonly class ToolResult
      */
     public static function resourceLink(string $uri, string $name, ?string $description = null, ?string $mimeType = null): self
     {
-        $item = ['type' => self::TYPE_RESOURCE_LINK, 'uri' => $uri, 'name' => $name];
-
-        if ($description !== null) {
-            $item['description'] = $description;
-        }
-
-        if ($mimeType !== null) {
-            $item['mimeType'] = $mimeType;
-        }
-
-        return new self([$item], false);
+        return new self([new ResourceLink($uri, $name, $description, $mimeType)], false);
     }
 
     /**
@@ -194,13 +167,7 @@ final readonly class ToolResult
      */
     public static function embeddedText(string $uri, string $text, ?string $mimeType = null): self
     {
-        $resource = ['uri' => $uri, 'text' => $text];
-
-        if ($mimeType !== null) {
-            $resource['mimeType'] = $mimeType;
-        }
-
-        return new self([['type' => self::TYPE_RESOURCE, 'resource' => $resource]], false);
+        return new self([new EmbeddedResource(ResourceContents::text($uri, $text, $mimeType))], false);
     }
 
     /**
@@ -216,19 +183,13 @@ final readonly class ToolResult
      */
     public static function embeddedBlob(string $uri, string $blob, ?string $mimeType = null): self
     {
-        $resource = ['uri' => $uri, 'blob' => $blob];
-
-        if ($mimeType !== null) {
-            $resource['mimeType'] = $mimeType;
-        }
-
-        return new self([['type' => self::TYPE_RESOURCE, 'resource' => $resource]], false);
+        return new self([new EmbeddedResource(ResourceContents::blob($uri, $blob, $mimeType))], false);
     }
 
     /**
      * Get the content items
      *
-     * @return array  List of content items, each ['type' => self::TYPE_*, ...]
+     * @return ContentInterface[]  List of content items
      *
      * @since  __DEPLOY_VERSION__
      */

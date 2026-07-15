@@ -13,6 +13,8 @@ namespace Joomla\CMS\Mcp\Resource;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Mcp\Content\ResourceContents;
+
 /**
  * Result of reading an MCP resource.
  *
@@ -26,13 +28,26 @@ final readonly class ResourceResult
     /**
      * Constructor.
      *
-     * @param array $contents  List of content items, each ['uri' => string, 'mimeType' => string]
-     *                         plus either 'text' (string) or 'blob' (base64 string)
+     * @param ResourceContents[] $contents  List of content items
      *
      * @since  __DEPLOY_VERSION__
      */
     private function __construct(private array $contents)
     {
+    }
+
+    /**
+     * Create a result from one or more content items
+     *
+     * @param ResourceContents ...$contents  The content items
+     *
+     * @return self
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public static function fromContents(ResourceContents ...$contents): self
+    {
+        return new self(array_values($contents));
     }
 
     /**
@@ -48,7 +63,7 @@ final readonly class ResourceResult
      */
     public static function text(string $uri, string $text, string $mimeType = 'text/plain'): self
     {
-        return new self([['uri' => $uri, 'text' => $text, 'mimeType' => $mimeType]]);
+        return new self([ResourceContents::text($uri, $text, $mimeType)]);
     }
 
     /**
@@ -64,14 +79,13 @@ final readonly class ResourceResult
      */
     public static function blob(string $uri, string $blob, string $mimeType): self
     {
-        return new self([['uri' => $uri, 'blob' => $blob, 'mimeType' => $mimeType]]);
+        return new self([ResourceContents::blob($uri, $blob, $mimeType)]);
     }
 
     /**
      * Get the content items
      *
-     * @return array  List of content items, each ['uri' => string, 'mimeType' => string]
-     *                plus either 'text' (string) or 'blob' (base64 string)
+     * @return ResourceContents[]  List of content items
      *
      * @since  __DEPLOY_VERSION__
      */

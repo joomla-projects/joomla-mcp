@@ -10,6 +10,12 @@
 
 namespace Joomla\Tests\Unit\Libraries\Cms\Mcp\Tool;
 
+use Joomla\CMS\Mcp\Content\AudioContent;
+use Joomla\CMS\Mcp\Content\ContentType;
+use Joomla\CMS\Mcp\Content\EmbeddedResource;
+use Joomla\CMS\Mcp\Content\ImageContent;
+use Joomla\CMS\Mcp\Content\ResourceLink;
+use Joomla\CMS\Mcp\Content\TextContent;
 use Joomla\CMS\Mcp\Tool\ToolResult;
 use Joomla\Tests\Unit\UnitTestCase;
 
@@ -23,6 +29,20 @@ use Joomla\Tests\Unit\UnitTestCase;
 class ToolResultTest extends UnitTestCase
 {
     /**
+     * Get the wire format of all content items of a result
+     *
+     * @param ToolResult $result  The result to convert
+     *
+     * @return  array
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toWireFormat(ToolResult $result): array
+    {
+        return array_map(static fn ($item) => $item->toArray(), $result->getContent());
+    }
+
+    /**
      * @return  void
      *
      * @since   __DEPLOY_VERSION__
@@ -31,7 +51,10 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::text('hello');
 
-        $this->assertSame([['type' => 'text', 'text' => 'hello']], $result->getContent());
+        $this->assertCount(1, $result->getContent());
+        $this->assertInstanceOf(TextContent::class, $result->getContent()[0]);
+        $this->assertSame(ContentType::Text, $result->getContent()[0]->getType());
+        $this->assertSame([['type' => 'text', 'text' => 'hello']], $this->toWireFormat($result));
         $this->assertFalse($result->isError());
         $this->assertNull($result->getStructuredContent());
     }
@@ -45,8 +68,30 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::error('boom');
 
-        $this->assertSame([['type' => 'text', 'text' => 'boom']], $result->getContent());
+        $this->assertSame([['type' => 'text', 'text' => 'boom']], $this->toWireFormat($result));
         $this->assertTrue($result->isError());
+    }
+
+    /**
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testFromContentAcceptsMultipleItems(): void
+    {
+        $result = ToolResult::fromContent(
+            new TextContent('Here is the logo:'),
+            new ImageContent('aWJhc2U2NA==', 'image/png')
+        );
+
+        $this->assertSame(
+            [
+                ['type' => 'text', 'text' => 'Here is the logo:'],
+                ['type' => 'image', 'data' => 'aWJhc2U2NA==', 'mimeType' => 'image/png'],
+            ],
+            $this->toWireFormat($result)
+        );
+        $this->assertFalse($result->isError());
     }
 
     /**
@@ -62,7 +107,7 @@ class ToolResultTest extends UnitTestCase
         $this->assertSame($data, $result->getStructuredContent());
         $this->assertSame(
             [['type' => 'text', 'text' => json_encode($data)]],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
         $this->assertFalse($result->isError());
     }
@@ -76,7 +121,7 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::structured(['a' => 1], 'One item found');
 
-        $this->assertSame([['type' => 'text', 'text' => 'One item found']], $result->getContent());
+        $this->assertSame([['type' => 'text', 'text' => 'One item found']], $this->toWireFormat($result));
     }
 
     /**
@@ -88,9 +133,11 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::image('aWJhc2U2NA==', 'image/png');
 
+        $this->assertInstanceOf(ImageContent::class, $result->getContent()[0]);
+        $this->assertSame(ContentType::Image, $result->getContent()[0]->getType());
         $this->assertSame(
             [['type' => 'image', 'data' => 'aWJhc2U2NA==', 'mimeType' => 'image/png']],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
         $this->assertFalse($result->isError());
     }
@@ -104,9 +151,11 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::audio('YWJhc2U2NA==', 'audio/wav');
 
+        $this->assertInstanceOf(AudioContent::class, $result->getContent()[0]);
+        $this->assertSame(ContentType::Audio, $result->getContent()[0]->getType());
         $this->assertSame(
             [['type' => 'audio', 'data' => 'YWJhc2U2NA==', 'mimeType' => 'audio/wav']],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 
@@ -119,9 +168,11 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::resourceLink('joomla://media/logo.png', 'logo.png');
 
+        $this->assertInstanceOf(ResourceLink::class, $result->getContent()[0]);
+        $this->assertSame(ContentType::ResourceLink, $result->getContent()[0]->getType());
         $this->assertSame(
             [['type' => 'resource_link', 'uri' => 'joomla://media/logo.png', 'name' => 'logo.png']],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 
@@ -149,7 +200,7 @@ class ToolResultTest extends UnitTestCase
                     'mimeType'    => 'image/png',
                 ],
             ],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 
@@ -162,6 +213,8 @@ class ToolResultTest extends UnitTestCase
     {
         $result = ToolResult::embeddedText('joomla://config', '{"sitename":"Test"}', 'application/json');
 
+        $this->assertInstanceOf(EmbeddedResource::class, $result->getContent()[0]);
+        $this->assertSame(ContentType::Resource, $result->getContent()[0]->getType());
         $this->assertSame(
             [
                 [
@@ -173,7 +226,7 @@ class ToolResultTest extends UnitTestCase
                     ],
                 ],
             ],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 
@@ -197,7 +250,7 @@ class ToolResultTest extends UnitTestCase
                     ],
                 ],
             ],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 
@@ -212,7 +265,7 @@ class ToolResultTest extends UnitTestCase
 
         $this->assertSame(
             [['type' => 'resource', 'resource' => ['uri' => 'joomla://config', 'text' => 'plain']]],
-            $result->getContent()
+            $this->toWireFormat($result)
         );
     }
 }

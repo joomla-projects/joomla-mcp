@@ -265,7 +265,7 @@ class McpEndpoint
     private function toCallToolResult(ToolResult $result): CallToolResult
     {
         $data = [
-            'content' => $result->getContent(),
+            'content' => array_map(static fn ($item) => $item->toArray(), $result->getContent()),
             'isError' => $result->isError(),
         ];
 
@@ -288,7 +288,9 @@ class McpEndpoint
      */
     private function toReadResourceResult(ResourceResult $result): ReadResourceResult
     {
-        return ReadResourceResult::fromResponseData(['contents' => $result->getContents()]);
+        return ReadResourceResult::fromResponseData(
+            ['contents' => array_map(static fn ($item) => $item->toArray(), $result->getContents())]
+        );
     }
 
     /**
