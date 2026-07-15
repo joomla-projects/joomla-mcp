@@ -31,8 +31,7 @@ final class RouterOperationDiscovery
         private readonly ApiRouter               $router,
         private readonly OperationCompiler       $compiler,
         private readonly ControllerClassResolver $controllerResolver,
-    )
-    {
+    ) {
     }
 
     /**

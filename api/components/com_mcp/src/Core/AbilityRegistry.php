@@ -42,13 +42,12 @@ final class AbilityRegistry
 
     public function addAbility(
         PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability,
-    ): void
-    {
+    ): void {
         match (true) {
-            $ability instanceof PromptInterface => $this->prompts[$ability->getName()] = $ability,
-            $ability instanceof ResourceInterface => $this->resources[$ability->getUri()] = $ability,
+            $ability instanceof PromptInterface           => $this->prompts[$ability->getName()]           = $ability,
+            $ability instanceof ResourceInterface         => $this->resources[$ability->getUri()]          = $ability,
             $ability instanceof ResourceTemplateInterface => $this->resourceTemplates[$ability->getName()] = $ability,
-            $ability instanceof ToolInterface => $this->tools[$ability->getName()] = $ability,
+            $ability instanceof ToolInterface             => $this->tools[$ability->getName()]             = $ability,
         };
     }
 
