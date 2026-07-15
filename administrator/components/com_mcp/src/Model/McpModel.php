@@ -141,7 +141,7 @@ class McpModel extends AdminModel
     {
         parent::preprocessForm($form, $data, $group);
 
-        // Sortierliste für das Feld "ordering" generieren
+        // Generate a sort list for the "ordering" field
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select(['ordering AS value', 'client_name AS text'])
