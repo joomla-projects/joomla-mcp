@@ -32,14 +32,14 @@ final class OpenApiDocumentFactory
         string $version = '1.0.0',
     ): array {
         $document = [
-            'openapi' => '3.1.0',
-            'info' => ['title' => $title, 'version' => $version],
-            'paths' => [],
+            'openapi'    => '3.1.0',
+            'info'       => ['title' => $title, 'version' => $version],
+            'paths'      => [],
             'components' => [
                 'securitySchemes' => [
                     'joomlaToken' => [
                         'type' => 'apiKey',
-                        'in' => 'header',
+                        'in'   => 'header',
                         'name' => 'X-Joomla-Token',
                     ],
                 ],
@@ -47,15 +47,15 @@ final class OpenApiDocumentFactory
         ];
 
         foreach ($operations as $operation) {
-            $path = '/' . str_replace(':id', '{id}', $operation->path);
-            $method = strtolower($operation->method);
+            $path       = '/' . str_replace(':id', '{id}', $operation->path);
+            $method     = strtolower($operation->method);
             $definition = [
                 'operationId' => $operation->operationId,
-                'summary' => $operation->title,
+                'summary'     => $operation->title,
                 'description' => $operation->description,
-                'tags' => $operation->tags,
-                'parameters' => $this->parameters($operation),
-                'responses' => [
+                'tags'        => $operation->tags,
+                'parameters'  => $this->parameters($operation),
+                'responses'   => [
                     (string) $operation->successStatus => [
                         'description' => $operation->successStatus === 204 ? 'No content.' : 'Successful response.',
                     ],
@@ -74,7 +74,7 @@ final class OpenApiDocumentFactory
             if ($operation->requestBodySchema !== []) {
                 $definition['requestBody'] = [
                     'required' => true,
-                    'content' => [
+                    'content'  => [
                         'application/json' => ['schema' => $this->transportSchema($operation->requestBodySchema)],
                     ],
                 ];
@@ -108,7 +108,7 @@ final class OpenApiDocumentFactory
         }
 
         $properties = [];
-        $nameMap = [];
+        $nameMap    = [];
 
         foreach ($schema['properties'] as $canonicalName => $propertySchema) {
             $transportName = $propertySchema['x-joomla-source'] ?? $canonicalName;
@@ -120,7 +120,7 @@ final class OpenApiDocumentFactory
             }
 
             $properties[$transportName] = $propertySchema;
-            $nameMap[$canonicalName] = $transportName;
+            $nameMap[$canonicalName]    = $transportName;
         }
 
         $schema['properties'] = $properties;
@@ -144,19 +144,19 @@ final class OpenApiDocumentFactory
 
         foreach ($operation->pathParameters as $name => $parameter) {
             $parameters[] = [
-                'name' => $name,
-                'in' => 'path',
+                'name'     => $name,
+                'in'       => 'path',
                 'required' => true,
-                'schema' => $parameter['schema'],
+                'schema'   => $parameter['schema'],
             ];
         }
 
         foreach ($operation->queryParameters as $name => $parameter) {
             $definition = [
-                'name' => $name,
-                'in' => 'query',
+                'name'     => $name,
+                'in'       => 'query',
                 'required' => false,
-                'schema' => $parameter['schema'],
+                'schema'   => $parameter['schema'],
             ];
 
             if ($parameter['argument'] !== $name) {

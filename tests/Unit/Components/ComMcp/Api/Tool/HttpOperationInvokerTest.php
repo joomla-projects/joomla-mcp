@@ -13,9 +13,9 @@ final class HttpOperationInvokerTest extends TestCase
 {
     public function testUpdateIsSentToTheEstablishedRestEndpoint(): void
     {
-        $request = null;
+        $request   = null;
         $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
-        $invoker = new HttpOperationInvoker(
+        $invoker   = new HttpOperationInvoker(
             new OperationArgumentMapper(),
             'https://example.test/api/index.php/',
             static fn (): string => 'test-token',

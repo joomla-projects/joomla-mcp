@@ -207,7 +207,7 @@ namespace {
     $assert(!isset($openApiCreateSchema['properties']['category']), 'A canonical property leaked into REST OpenAPI.');
 
     $capturedRequest = null;
-    $httpInvoker = new HttpOperationInvoker(
+    $httpInvoker     = new HttpOperationInvoker(
         new OperationArgumentMapper(),
         'https://example.test/api/index.php/',
         static fn (): string => 'test-token',
