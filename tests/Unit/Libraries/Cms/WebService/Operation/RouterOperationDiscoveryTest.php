@@ -6,7 +6,8 @@ use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Router\ApiRouter;
 use Joomla\CMS\WebService\Operation\ControllerClassResolver;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
-use Joomla\CMS\WebService\Operation\RestRouteFactory;
+use Joomla\CMS\WebService\Operation\OperationRoute;
+use Joomla\CMS\WebService\Operation\OperationRouteFactory;
 use Joomla\CMS\WebService\Operation\RouterOperationDiscovery;
 use Joomla\Component\Content\Api\Controller\ArticlesController;
 use Joomla\Router\Route;
@@ -16,9 +17,9 @@ final class RouterOperationDiscoveryTest extends TestCase
 {
     public function testDiscoversOperationsCarriedByGeneratedRoutes(): void
     {
-        $router   = $this->createRouter();
+        $router = $this->createRouter();
         $compiler = new OperationCompiler();
-        $factory  = new RestRouteFactory();
+        $factory = new OperationRouteFactory();
 
         foreach ($compiler->compile(ArticlesController::class) as $operation) {
             $router->addRoute($factory->create($operation));
@@ -36,6 +37,51 @@ final class RouterOperationDiscoveryTest extends TestCase
             ],
             array_column($operations, 'operationId'),
         );
+    }
+
+    public function testGeneratedAndManualRoutesCanCoexist(): void
+    {
+        $router = $this->createRouter();
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[0];
+        $generatedRoute = (new OperationRouteFactory())->create($operation);
+        $manualRoute = new Route(
+            ['GET'],
+            'v1/content/articles/:id/contenthistory',
+            'history.displayList',
+            ['id' => '(\\d+)'],
+            ['component' => 'com_contenthistory'],
+        );
+
+        $router->addRoute($generatedRoute);
+        $router->addRoute($manualRoute);
+
+        self::assertCount(2, $router->getRoutes());
+        self::assertInstanceOf(OperationRoute::class, $router->getRoutes()[0]);
+        self::assertSame(Route::class, $router->getRoutes()[1]::class);
+
+        $operations = (new RouterOperationDiscovery(
+            $router,
+            new OperationCompiler(),
+            new ControllerClassResolver(),
+        ))->discover();
+
+        self::assertCount(1, $operations);
+        self::assertSame('content.articles.list', $operations[0]->operationId);
+    }
+
+    public function testOperationMetadataSurvivesRouteSerialisation(): void
+    {
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
+        $route = (new OperationRouteFactory())->create($operation);
+
+        $restored = unserialize(serialize($route));
+
+        self::assertInstanceOf(OperationRoute::class, $restored);
+        self::assertSame($operation->operationId, $restored->getOperation()->operationId);
+        self::assertSame($operation->method, $restored->getOperation()->method);
+        self::assertSame($operation->path, $restored->getOperation()->path);
+        self::assertSame($route->getController(), $restored->getController());
+        self::assertSame($route->getDefaults(), $restored->getDefaults());
     }
 
     public function testLegacyRoutesLimitWhichCompiledOperationsAreExposed(): void
@@ -70,7 +116,7 @@ final class RouterOperationDiscoveryTest extends TestCase
                 ['PATCH'],
                 'v1/content/articles/:id',
                 'articles.edit',
-                ['id'        => '(\\d+)'],
+                ['id' => '(\\d+)'],
                 ['component' => 'com_content', 'context' => 'com_content.article'],
             ),
         );

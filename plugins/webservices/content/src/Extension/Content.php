@@ -14,7 +14,7 @@ use Joomla\CMS\Event\Application\BeforeApiRouteEvent;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\ApiRouter;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
-use Joomla\CMS\WebService\Operation\RestRouteFactory;
+use Joomla\CMS\WebService\Operation\OperationRouteFactory;
 use Joomla\Component\Content\Api\Controller\ArticlesController;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Router\Route;
@@ -57,7 +57,7 @@ final class Content extends CMSPlugin implements SubscriberInterface
     {
         $router       = $event->getRouter();
         $compiler     = new OperationCompiler();
-        $routeFactory = new RestRouteFactory();
+        $routeFactory = new OperationRouteFactory();
 
         foreach ($compiler->compile(ArticlesController::class) as $operation) {
             $router->addRoute($routeFactory->create($operation));
@@ -66,7 +66,7 @@ final class Content extends CMSPlugin implements SubscriberInterface
         $router->createCRUDRoutes(
             'v1/content/categories',
             'categories',
-            ['component' => 'com_categories', 'extension' => 'com_content']
+            ['component' => 'com_categories', 'extension' => 'com_content'],
         );
 
         $this->createFieldsRoutes($router);
@@ -87,22 +87,22 @@ final class Content extends CMSPlugin implements SubscriberInterface
         $router->createCRUDRoutes(
             'v1/fields/content/articles',
             'fields',
-            ['component' => 'com_fields', 'context' => 'com_content.article']
+            ['component' => 'com_fields', 'context' => 'com_content.article'],
         );
         $router->createCRUDRoutes(
             'v1/fields/content/categories',
             'fields',
-            ['component' => 'com_fields', 'context' => 'com_content.categories']
+            ['component' => 'com_fields', 'context' => 'com_content.categories'],
         );
         $router->createCRUDRoutes(
             'v1/fields/groups/content/articles',
             'groups',
-            ['component' => 'com_fields', 'context' => 'com_content.article']
+            ['component' => 'com_fields', 'context' => 'com_content.article'],
         );
         $router->createCRUDRoutes(
             'v1/fields/groups/content/categories',
             'groups',
-            ['component' => 'com_fields', 'context' => 'com_content.categories']
+            ['component' => 'com_fields', 'context' => 'com_content.categories'],
         );
     }
 
@@ -124,8 +124,7 @@ final class Content extends CMSPlugin implements SubscriberInterface
         ];
 
         $getDefaults = array_merge(['public' => false], $defaults);
-
-        $routes = [
+        $routes      = [
             new Route(
                 ['GET'],
                 'v1/content/articles/:id/contenthistory',

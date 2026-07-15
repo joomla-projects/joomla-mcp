@@ -11,11 +11,11 @@
 namespace Joomla\CMS\WebService\Operation;
 
 /**
- * Projects canonical operations to Joomla router routes.
+ * Projects canonical operations to Joomla operation routes.
  *
  * @since  __DEPLOY_VERSION__
  */
-final class RestRouteFactory
+final class OperationRouteFactory
 {
     public function create(OperationDefinition $operation): OperationRoute
     {
