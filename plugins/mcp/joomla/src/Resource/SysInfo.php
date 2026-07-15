@@ -3,10 +3,9 @@
 namespace Joomla\Plugin\Mcp\Joomla\Resource;
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Mcp\Resource\ResourceInterface;
+use Joomla\CMS\Mcp\Resource\ResourceResult;
 use Joomla\CMS\Version;
-use Joomla\Component\MCP\Api\Resource\ResourceInterface;
-use Mcp\Types\ReadResourceResult;
-use Mcp\Types\TextResourceContents;
 
 class SysInfo implements ResourceInterface
 {
@@ -35,7 +34,7 @@ class SysInfo implements ResourceInterface
         return "text/plain";
     }
 
-    public function read(): ReadResourceResult
+    public function read(): ResourceResult
     {
         $info = [
             Text::sprintf('PLG_MCP_JOOMLA_SYSINFO_SERVER_TIME', date('Y-m-d H:i:s')),
@@ -43,14 +42,6 @@ class SysInfo implements ResourceInterface
             Text::sprintf('PLG_MCP_JOOMLA_SYSINFO_JOOMLA_VERSION', (new Version())->getLongVersion()),
         ];
 
-        return new ReadResourceResult(
-            contents: [
-                new TextResourceContents(
-                    uri: $this->getUri(),
-                    text: implode("\n", $info),
-                    mimeType: $this->getMimeType(),
-                ),
-            ]
-        );
+        return ResourceResult::text($this->getUri(), implode("\n", $info), $this->getMimeType());
     }
 }

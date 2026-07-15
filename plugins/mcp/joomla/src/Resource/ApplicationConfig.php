@@ -4,11 +4,10 @@ namespace Joomla\Plugin\Mcp\Joomla\Resource;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Mcp\Resource\ResourceInterface;
+use Joomla\CMS\Mcp\Resource\ResourceResult;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
 use Joomla\Component\Config\Api\Resource\ApplicationConfig as ConfigDTO;
-use Joomla\Component\MCP\Api\Resource\ResourceInterface;
-use Mcp\Types\ReadResourceResult;
-use Mcp\Types\TextResourceContents;
 
 class ApplicationConfig implements ResourceInterface
 {
@@ -56,7 +55,7 @@ class ApplicationConfig implements ResourceInterface
         return $allowedFields;
     }
 
-    public function read(): ReadResourceResult
+    public function read(): ResourceResult
     {
         $app = Factory::getApplication();
 
@@ -79,14 +78,6 @@ class ApplicationConfig implements ResourceInterface
         // Format as JSON
         $jsonData = json_encode($filteredData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-        return new ReadResourceResult(
-            contents: [
-                new TextResourceContents(
-                    uri: $this->getUri(),
-                    text: $jsonData,
-                    mimeType: $this->getMimeType(),
-                ),
-            ]
-        );
+        return ResourceResult::text($this->getUri(), $jsonData, $this->getMimeType());
     }
 }
