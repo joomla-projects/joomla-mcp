@@ -15,9 +15,9 @@ final class RouterOperationDiscoveryTest extends TestCase
 {
     public function testDiscoversOperationsCarriedByGeneratedRoutes(): void
     {
-        $router = $this->createRouter();
+        $router   = $this->createRouter();
         $compiler = new OperationCompiler();
-        $factory = new RestRouteFactory();
+        $factory  = new RestRouteFactory();
 
         foreach ($compiler->compile(ArticlesController::class) as $operation) {
             $router->addRoute($factory->create($operation));
@@ -64,7 +64,7 @@ final class RouterOperationDiscoveryTest extends TestCase
                 ['PATCH'],
                 'v1/content/articles/:id',
                 'articles.edit',
-                ['id' => '(\\d+)'],
+                ['id'        => '(\\d+)'],
                 ['component' => 'com_content', 'context' => 'com_content.article'],
             ),
         );

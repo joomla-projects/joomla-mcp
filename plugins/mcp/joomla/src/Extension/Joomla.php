@@ -44,10 +44,10 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
         $event->addAbility(new ApplicationConfig());
         $event->addAbility(new SysInfo());
 
-        $compiler = new OperationCompiler();
-        $router = $this->getApplication()->getContainer()->get(ApiRouter::class);
+        $compiler  = new OperationCompiler();
+        $router    = $this->getApplication()->getContainer()->get(ApiRouter::class);
         $discovery = new RouterOperationDiscovery($router, $compiler);
-        $provider = new WebserviceToolProvider($compiler, new InternalApiOperationInvoker());
+        $provider  = new WebserviceToolProvider($compiler, new InternalApiOperationInvoker());
 
         foreach ($provider->getToolsFromOperations($discovery->discover()) as $tool) {
             $event->addAbility($tool);

@@ -47,13 +47,13 @@ final class RouterOperationDiscovery
             return $this->operations;
         }
 
-        $routes = $this->router->getRoutes();
-        $operations = [];
+        $routes            = $this->router->getRoutes();
+        $operations        = [];
         $controllerClasses = [];
 
         foreach ($routes as $route) {
             if ($route instanceof OperationRouteInterface) {
-                $operation = $this->attachRouteDefaults($route->getOperation(), $route);
+                $operation                           = $this->attachRouteDefaults($route->getOperation(), $route);
                 $operations[$operation->operationId] = $operation;
 
                 continue;
@@ -93,8 +93,8 @@ final class RouterOperationDiscovery
     private function findMatchingRoute(OperationDefinition $operation, array $routes): ?Route
     {
         $component = $operation->acl['component'] ?? null;
-        $target = $operation->controller . '.' . $operation->task;
-        $path = trim($operation->path, '/');
+        $target    = $operation->controller . '.' . $operation->task;
+        $path      = trim($operation->path, '/');
 
         foreach ($routes as $route) {
             $defaults = $route->getDefaults();
