@@ -13,12 +13,10 @@ declare(strict_types=1);
 namespace Joomla\Component\MCP\Api\Exception;
 
 // phpcs:disable PSR1.Files.SideEffects
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use InvalidArgumentException;
 
-use function defined;
 
 /**
  * Thrown when a requested MCP ability (tool, resource, resource template
@@ -26,7 +24,7 @@ use function defined;
  *
  * @since  __DEPLOY_VERSION__
  */
-class AbilityNotFoundException extends InvalidArgumentException
+class AbilityNotFoundException extends \InvalidArgumentException
 {
     /**
      * Constructor.
