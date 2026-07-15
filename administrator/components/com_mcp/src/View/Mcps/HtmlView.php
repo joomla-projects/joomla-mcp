@@ -44,7 +44,7 @@ class HtmlView extends ListView
             $config['option'] = 'com_mcp';
         }
 
-        $config['toolbar_title']  = 'COM_MCP';
+        $config['toolbar_title']  = 'COM_MCP_MANAGER_MCPS';
         $config['toolbar_icon']   = 'cog mcp';
         $config['supports_batch'] = false;
 
