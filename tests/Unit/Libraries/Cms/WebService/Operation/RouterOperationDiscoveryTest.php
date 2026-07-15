@@ -17,9 +17,9 @@ final class RouterOperationDiscoveryTest extends TestCase
 {
     public function testDiscoversOperationsCarriedByGeneratedRoutes(): void
     {
-        $router = $this->createRouter();
+        $router   = $this->createRouter();
         $compiler = new OperationCompiler();
-        $factory = new OperationRouteFactory();
+        $factory  = new OperationRouteFactory();
 
         foreach ($compiler->compile(ArticlesController::class) as $operation) {
             $router->addRoute($factory->create($operation));
@@ -41,14 +41,14 @@ final class RouterOperationDiscoveryTest extends TestCase
 
     public function testGeneratedAndManualRoutesCanCoexist(): void
     {
-        $router = $this->createRouter();
-        $operation = (new OperationCompiler())->compile(ArticlesController::class)[0];
+        $router         = $this->createRouter();
+        $operation      = (new OperationCompiler())->compile(ArticlesController::class)[0];
         $generatedRoute = (new OperationRouteFactory())->create($operation);
-        $manualRoute = new Route(
+        $manualRoute    = new Route(
             ['GET'],
             'v1/content/articles/:id/contenthistory',
             'history.displayList',
-            ['id' => '(\\d+)'],
+            ['id'        => '(\\d+)'],
             ['component' => 'com_contenthistory'],
         );
 
@@ -72,7 +72,7 @@ final class RouterOperationDiscoveryTest extends TestCase
     public function testOperationMetadataSurvivesRouteSerialisation(): void
     {
         $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
-        $route = (new OperationRouteFactory())->create($operation);
+        $route     = (new OperationRouteFactory())->create($operation);
 
         $restored = unserialize(serialize($route));
 
@@ -116,7 +116,7 @@ final class RouterOperationDiscoveryTest extends TestCase
                 ['PATCH'],
                 'v1/content/articles/:id',
                 'articles.edit',
-                ['id' => '(\\d+)'],
+                ['id'        => '(\\d+)'],
                 ['component' => 'com_content', 'context' => 'com_content.article'],
             ),
         );
