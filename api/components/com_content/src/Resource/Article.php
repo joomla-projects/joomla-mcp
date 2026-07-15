@@ -16,8 +16,7 @@ use Joomla\CMS\WebService\Resource\Attribute\Property\Example;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Hidden;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Items;
-use Joomla\CMS\WebService\Resource\Attribute\Property\Source;
-use Joomla\CMS\WebService\Resource\Attribute\Property\WriteOnly;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Required;
 use Joomla\CMS\WebService\Resource\Resource;
 use Joomla\CMS\WebService\Resource\ResourceProfile;
 use Joomla\Component\Content\Api\Resource\Enum\ArticleState;
@@ -42,20 +41,11 @@ final class Article extends Resource
     #[Guarded]
     public int $asset_id;
 
+    #[Required([ResourceProfile::CREATE])]
     public string $title;
 
-    #[Guarded]
-    public string $text;
-
-    #[WriteOnly]
     #[Description('The complete article text accepted by the established create endpoint.')]
-    public string $articletext;
-
-    #[WriteOnly]
-    public string $introtext = '';
-
-    #[WriteOnly]
-    public string $fulltext = '';
+    public string $text;
 
     #[Items('integer', [ResourceProfile::CREATE, ResourceProfile::UPDATE])]
     #[Items('object', [ResourceProfile::READ, ResourceProfile::LIST])]
@@ -69,9 +59,14 @@ final class Article extends Resource
     #[Example(1)]
     public ArticleState $state;
 
-    #[Description('The category identifier.')]
-    #[Source('catid')]
-    public int $category;
+    #[Description('The category identifier for list and read endpoints.')]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public int $catid;
+
+    #[Description('The category identifier for create and update endpoints.')]
+    #[Guarded]
+    #[Hidden([ResourceProfile::CREATE, ResourceProfile::UPDATE])]
+    public object $category;
 
     public ArticleImage $images;
     public string $metakey  = '';
