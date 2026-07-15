@@ -10,25 +10,21 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Api\Resource;
+namespace Joomla\CMS\Mcp\Resource;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Mcp\Types\ReadResourceResult;
-
-interface ResourceInterface
+interface ResourceTemplateInterface
 {
     public function getName(): string;
 
-    public function getUri(): string;
+    public function getUriTemplate(): string;
 
     public function getDescription(): string;
 
     public function getTitle(): string;
 
     public function getMimeType(): string;
-
-    public function read(): ReadResourceResult;
 }

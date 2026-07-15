@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Api\Tool;
+namespace Joomla\CMS\Mcp\Tool;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;

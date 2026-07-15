@@ -10,13 +10,15 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Api\Prompt;
+namespace Joomla\CMS\Mcp\Resource;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-interface PromptInterface
+use Mcp\Types\ReadResourceResult;
+
+interface ResourceInterface
 {
     public function getName(): string;
 
@@ -26,5 +28,7 @@ interface PromptInterface
 
     public function getTitle(): string;
 
-    public function getArguments(): array;
+    public function getMimeType(): string;
+
+    public function read(): ReadResourceResult;
 }
