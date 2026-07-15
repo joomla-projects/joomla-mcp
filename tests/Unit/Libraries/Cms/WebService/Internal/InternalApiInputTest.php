@@ -23,12 +23,12 @@ final class InternalApiInputTest extends TestCase
         $input = new InternalApiInput(
             [
                 'option' => 'com_content',
-                'task' => 'articles.edit',
-                'id' => 42,
-                'data' => ['title' => 'Changed'],
-                'title' => 'Changed',
+                'task'   => 'articles.edit',
+                'id'     => 42,
+                'data'   => ['title' => 'Changed'],
+                'title'  => 'Changed',
             ],
-            ['title' => 'Changed'],
+            ['title'  => 'Changed'],
             ['filter' => ['state' => 1]],
             'PATCH',
         );

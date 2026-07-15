@@ -30,7 +30,7 @@ final class InternalApiApplication extends CMSApplication
      */
     public function __construct(CMSApplication $parent, Input $input)
     {
-        $this->name = 'api';
+        $this->name     = 'api';
         $this->clientId = 3;
 
         parent::__construct(

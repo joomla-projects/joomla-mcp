@@ -36,7 +36,7 @@ final class InternalApiOperationInvokerTest extends TestCase
             inputSchema: ['type' => 'object'],
             outputSchema: ['type' => 'object'],
             requestBodySchema: [
-                'type' => 'object',
+                'type'       => 'object',
                 'properties' => [
                     'category' => ['type' => 'integer', 'x-joomla-source' => 'catid'],
                 ],
@@ -58,8 +58,8 @@ final class InternalApiOperationInvokerTest extends TestCase
                     200,
                     [
                         'data' => [
-                            'type' => 'articles',
-                            'id' => '42',
+                            'type'       => 'articles',
+                            'id'         => '42',
                             'attributes' => ['title' => 'Changed'],
                         ],
                     ],
@@ -68,7 +68,7 @@ final class InternalApiOperationInvokerTest extends TestCase
         };
 
         $invoker = new InternalApiOperationInvoker(new OperationArgumentMapper(), $dispatcher);
-        $result = $invoker->invoke($operation, ['id' => 42, 'category' => 7]);
+        $result  = $invoker->invoke($operation, ['id' => 42, 'category' => 7]);
 
         self::assertSame(['id' => 42], $dispatcher->input?->path);
         self::assertSame(['catid' => 7], $dispatcher->input?->body);

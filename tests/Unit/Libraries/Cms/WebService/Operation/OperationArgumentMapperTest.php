@@ -25,7 +25,7 @@ final class OperationArgumentMapperTest extends TestCase
     public function testCanonicalResourceNamesMapToEstablishedRestNames(): void
     {
         $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
-        $input = (new OperationArgumentMapper())->map(
+        $input     = (new OperationArgumentMapper())->map(
             $operation,
             ['id' => 7, 'category' => 2],
         );

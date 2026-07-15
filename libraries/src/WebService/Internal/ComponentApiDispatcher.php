@@ -45,27 +45,27 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
 
         if (!\is_string($component) || $component === '') {
             throw new \LogicException(
-                sprintf('Operation %s does not define a Joomla component.', $operation->operationId),
+                \sprintf('Operation %s does not define a Joomla component.', $operation->operationId),
             );
         }
 
-        $query = $this->expandQueryParameters($input->query);
-        $source = array_replace_recursive($input->body, $query, $input->path);
-        $source['data'] = $input->body;
-        $source['option'] = $component;
+        $query                = $this->expandQueryParameters($input->query);
+        $source               = array_replace_recursive($input->body, $query, $input->path);
+        $source['data']       = $input->body;
+        $source['option']     = $component;
         $source['controller'] = $operation->controller;
-        $source['task'] = $operation->controller . '.' . $operation->task;
-        $source['format'] = 'jsonapi';
+        $source['task']       = $operation->controller . '.' . $operation->task;
+        $source['format']     = 'jsonapi';
 
         $requestInput = new InternalApiInput($source, $input->body, $query, $operation->method);
-        $application = new InternalApiApplication($parent, $requestInput);
+        $application  = new InternalApiApplication($parent, $requestInput);
         $factoryState = $this->replaceFactoryState($application);
-        $outputLevel = ob_get_level();
+        $outputLevel  = ob_get_level();
         ob_start();
         $exception = null;
 
         try {
-            $extension = $application->bootComponent($component);
+            $extension  = $application->bootComponent($component);
             $dispatcher = $extension->getDispatcher($application, $requestInput);
             $dispatcher->dispatch();
         } catch (InternalApiApplicationClosed) {
@@ -81,10 +81,10 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
             return $this->exceptionResponse($exception, $parent);
         }
 
-        $headers = $this->normaliseHeaders($application);
+        $headers    = $this->normaliseHeaders($application);
         $statusCode = $this->statusCode($headers, $operation->successStatus);
-        $mediaType = $this->mediaType($headers);
-        $body = $this->responseBody($application, $output, $statusCode);
+        $mediaType  = $this->mediaType($headers);
+        $body       = $this->responseBody($application, $output, $statusCode);
 
         return new InternalApiResponse($statusCode, $body, $headers, $mediaType);
     }
@@ -130,7 +130,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     {
         $state = [
             'application' => self::readFactoryProperty('application'),
-            'document' => self::readFactoryProperty('document'),
+            'document'    => self::readFactoryProperty('document'),
         ];
 
         self::writeFactoryProperty('application', $application);
@@ -189,7 +189,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         }
 
         foreach ($application->getHeaders() as $header) {
-            $name = \is_array($header) ? ($header['name'] ?? null) : ($header->name ?? null);
+            $name  = \is_array($header) ? ($header['name'] ?? null) : ($header->name ?? null);
             $value = \is_array($header) ? ($header['value'] ?? null) : ($header->value ?? null);
 
             if (!\is_string($name) || (!\is_scalar($value) && $value !== null)) {
@@ -281,7 +281,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
                 'errors' => [
                     [
                         'status' => (string) $status,
-                        'title' => $this->statusTitle($status),
+                        'title'  => $this->statusTitle($status),
                         'detail' => $detail,
                     ],
                 ],
@@ -292,10 +292,10 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     private function exceptionStatus(\Throwable $exception): int
     {
         $knownStatus = match (true) {
-            $exception instanceof NotAllowed => 403,
-            $exception instanceof ResourceNotFound => 404,
+            $exception instanceof NotAllowed                => 403,
+            $exception instanceof ResourceNotFound          => 404,
             $exception instanceof InvalidParameterException => 400,
-            default => null,
+            default                                         => null,
         };
 
         if ($knownStatus !== null) {
@@ -310,12 +310,12 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     private function statusTitle(int $status): string
     {
         return match ($status) {
-            400 => 'Bad Request',
-            401 => 'Unauthorised',
-            403 => 'Forbidden',
-            404 => 'Not Found',
-            409 => 'Conflict',
-            422 => 'Unprocessable Content',
+            400     => 'Bad Request',
+            401     => 'Unauthorised',
+            403     => 'Forbidden',
+            404     => 'Not Found',
+            409     => 'Conflict',
+            422     => 'Unprocessable Content',
             default => $status >= 500 ? 'Internal Server Error' : 'API Error',
         };
     }

@@ -48,7 +48,7 @@ final class InternalApiOperationInvoker implements OperationInvokerInterface
 
     private function normaliseResponseBody(mixed $body): mixed
     {
-        if (!\is_array($body) || !array_key_exists('data', $body)) {
+        if (!\is_array($body) || !\array_key_exists('data', $body)) {
             return $body;
         }
 
@@ -77,7 +77,7 @@ final class InternalApiOperationInvoker implements OperationInvokerInterface
     {
         $normalised = \is_array($resource['attributes'] ?? null) ? $resource['attributes'] : [];
 
-        if (array_key_exists('id', $resource) && !array_key_exists('id', $normalised)) {
+        if (\array_key_exists('id', $resource) && !\array_key_exists('id', $normalised)) {
             $normalised['id'] = ctype_digit((string) $resource['id'])
                 ? (int) $resource['id']
                 : $resource['id'];

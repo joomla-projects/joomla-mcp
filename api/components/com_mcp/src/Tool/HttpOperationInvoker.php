@@ -47,7 +47,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
         ?callable $requester = null,
         private readonly int $timeout = 30,
     ) {
-        $this->baseUri = rtrim($baseUri ?? Uri::root() . 'api/index.php/', '/') . '/';
+        $this->baseUri       = rtrim($baseUri ?? Uri::root() . 'api/index.php/', '/') . '/';
         $this->tokenProvider = $tokenProvider === null
             ? $this->extractBearerToken(...)
             : \Closure::fromCallable($tokenProvider);
@@ -59,7 +59,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
     public function invoke(OperationDefinition $operation, array $arguments): OperationResult
     {
         $input = $this->argumentMapper->map($operation, $arguments);
-        $path = $operation->path;
+        $path  = $operation->path;
 
         foreach ($input->path as $name => $value) {
             $path = str_replace(':' . $name, rawurlencode((string) $value), $path);
@@ -67,7 +67,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
 
         if (preg_match('/:[A-Za-z_][A-Za-z0-9_]*/', $path, $matches) === 1) {
             throw new \InvalidArgumentException(
-                sprintf('The required path argument %s was not supplied.', ltrim($matches[0], ':')),
+                \sprintf('The required path argument %s was not supplied.', ltrim($matches[0], ':')),
             );
         }
 
@@ -86,7 +86,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
         }
 
         $headers = [
-            'Accept' => 'application/vnd.api+json',
+            'Accept'         => 'application/vnd.api+json',
             'X-Joomla-Token' => trim($token),
         ];
         $body = null;
@@ -175,12 +175,12 @@ final class HttpOperationInvoker implements OperationInvokerInterface
         curl_setopt_array(
             $handle,
             [
-                CURLOPT_CUSTOMREQUEST => strtoupper($method),
+                CURLOPT_CUSTOMREQUEST  => strtoupper($method),
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_CONNECTTIMEOUT => min(10, $timeout),
-                CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_HTTPHEADER => $headerLines,
+                CURLOPT_TIMEOUT        => $timeout,
+                CURLOPT_HTTPHEADER     => $headerLines,
             ],
         );
 
@@ -201,7 +201,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
             throw new \RuntimeException($message);
         }
 
-        $statusCode = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+        $statusCode  = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
         $contentType = (string) curl_getinfo($handle, CURLINFO_CONTENT_TYPE);
         curl_close($handle);
 
@@ -233,7 +233,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
 
     private function normaliseResponseBody(mixed $body): mixed
     {
-        if (!\is_array($body) || !array_key_exists('data', $body)) {
+        if (!\is_array($body) || !\array_key_exists('data', $body)) {
             return $body;
         }
 
@@ -262,7 +262,7 @@ final class HttpOperationInvoker implements OperationInvokerInterface
     {
         $normalised = \is_array($resource['attributes'] ?? null) ? $resource['attributes'] : [];
 
-        if (array_key_exists('id', $resource) && !array_key_exists('id', $normalised)) {
+        if (\array_key_exists('id', $resource) && !\array_key_exists('id', $normalised)) {
             $normalised['id'] = ctype_digit((string) $resource['id'])
                 ? (int) $resource['id']
                 : $resource['id'];

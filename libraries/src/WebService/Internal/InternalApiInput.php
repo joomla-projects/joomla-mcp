@@ -46,7 +46,7 @@ final class InternalApiInput extends Json
         parent::__construct($source, $options);
 
         $this->requestMethod = strtoupper($method);
-        $this->rawBody = $body === []
+        $this->rawBody       = $body === []
             ? ''
             : json_encode(
                 $body,
@@ -57,8 +57,8 @@ final class InternalApiInput extends Json
             $_SERVER,
             [
                 'REQUEST_METHOD' => $this->requestMethod,
-                'CONTENT_TYPE' => $body === [] ? null : 'application/json',
-                'HTTP_ACCEPT' => 'application/vnd.api+json',
+                'CONTENT_TYPE'   => $body === [] ? null : 'application/json',
+                'HTTP_ACCEPT'    => 'application/vnd.api+json',
             ],
             $server,
         );
@@ -66,12 +66,12 @@ final class InternalApiInput extends Json
         $post = $this->requestMethod === 'POST' ? $body : [];
 
         // Existing Joomla and third-party controllers may use any of these request views.
-        $this->inputs['json'] = $this;
-        $this->inputs['get'] = new Input($query, $options);
-        $this->inputs['post'] = new Input($post, $options);
+        $this->inputs['json']    = $this;
+        $this->inputs['get']     = new Input($query, $options);
+        $this->inputs['post']    = new Input($post, $options);
         $this->inputs['request'] = new Input($source, $options);
-        $server = array_filter($server, static fn ($value): bool => $value !== null);
-        $this->inputs['server'] = new Input($server, $options);
+        $server                  = array_filter($server, static fn ($value): bool => $value !== null);
+        $this->inputs['server']  = new Input($server, $options);
     }
 
     /**
