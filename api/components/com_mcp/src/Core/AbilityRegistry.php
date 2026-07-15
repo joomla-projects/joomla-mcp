@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Joomla\Component\MCP\Api\Core;
 
 // phpcs:disable PSR1.Files.SideEffects
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Mcp\Prompt\PromptInterface;
@@ -21,7 +21,6 @@ use Joomla\CMS\Mcp\Resource\ResourceInterface;
 use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
 use Joomla\CMS\Mcp\Tool\ToolInterface;
 use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
-use function defined;
 
 /**
  * Registry for MCP tools
