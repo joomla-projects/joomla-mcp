@@ -46,7 +46,9 @@ final class WebserviceTool implements ToolInterface
         ];
 
         if ($this->operation->outputSchema !== null) {
-            $schema['outputSchema'] = $this->operation->outputSchema;
+            $schema['outputSchema'] = $this->isCollection()
+                ? $this->collectionSchema($this->operation->outputSchema)
+                : $this->operation->outputSchema;
         }
 
         return $schema;
@@ -55,14 +57,15 @@ final class WebserviceTool implements ToolInterface
     public function execute(array $params): CallToolResult
     {
         try {
-            $result = $this->invoker->invoke($this->operation, $params);
-            $text   = $this->formatBody($result->body, $result->statusCode);
+            $result     = $this->invoker->invoke($this->operation, $params);
+            $structured = $this->structuredContent($result);
+            $text       = $this->formatBody($structured ?? $result->body, $result->statusCode);
 
             return new CallToolResult(
                 [new TextContent($text)],
                 !$result->isSuccessful(),
                 null,
-                $result->isSuccessful() && \is_array($result->body) ? $result->body : null,
+                $structured,
             );
         } catch (\Throwable $exception) {
             return new CallToolResult(
@@ -78,6 +81,53 @@ final class WebserviceTool implements ToolInterface
                 true,
             );
         }
+    }
+
+    /**
+     * Reports whether the operation yields a collection rather than a single resource.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function isCollection(): bool
+    {
+        return ($this->operation->outputSchema['type'] ?? null) === 'array';
+    }
+
+    /**
+     * Wraps a collection schema in the object MCP requires at the top level of an output schema.
+     *
+     * The operation keeps describing a list as an array, which is what the REST response and the OpenAPI document
+     * state. Only the MCP projection needs the object, so the rows are reported under `items`.
+     *
+     * @param array<string, mixed> $schema
+     *
+     * @return array<string, mixed>
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function collectionSchema(array $schema): array
+    {
+        return [
+            'type'       => 'object',
+            'properties' => ['items' => $schema],
+            'required'   => ['items'],
+        ];
+    }
+
+    /**
+     * Builds the structured result, which must match the schema reported by getSchema().
+     *
+     * @return array<string, mixed>|null
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function structuredContent(OperationResult $result): ?array
+    {
+        if (!$result->isSuccessful() || !\is_array($result->body)) {
+            return null;
+        }
+
+        return $this->isCollection() ? ['items' => $result->body] : $result->body;
     }
 
     private function formatBody(mixed $body, int $statusCode): string
