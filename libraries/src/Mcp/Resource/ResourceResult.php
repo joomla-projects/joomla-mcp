@@ -26,7 +26,8 @@ final readonly class ResourceResult
     /**
      * Constructor.
      *
-     * @param array $contents  List of content items, each ['uri' => string, 'text' => string, 'mimeType' => string]
+     * @param array $contents  List of content items, each ['uri' => string, 'mimeType' => string]
+     *                         plus either 'text' (string) or 'blob' (base64 string)
      *
      * @since  __DEPLOY_VERSION__
      */
@@ -51,9 +52,26 @@ final readonly class ResourceResult
     }
 
     /**
+     * Create a result with a single binary content item
+     *
+     * @param string $uri       The resource URI
+     * @param string $blob      The base64 encoded resource content
+     * @param string $mimeType  The MIME type of the content
+     *
+     * @return self
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public static function blob(string $uri, string $blob, string $mimeType): self
+    {
+        return new self([['uri' => $uri, 'blob' => $blob, 'mimeType' => $mimeType]]);
+    }
+
+    /**
      * Get the content items
      *
-     * @return array  List of content items, each ['uri' => string, 'text' => string, 'mimeType' => string]
+     * @return array  List of content items, each ['uri' => string, 'mimeType' => string]
+     *                plus either 'text' (string) or 'blob' (base64 string)
      *
      * @since  __DEPLOY_VERSION__
      */
