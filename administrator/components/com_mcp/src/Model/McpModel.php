@@ -142,6 +142,7 @@ class McpModel extends AdminModel
     protected function preprocessForm(\Joomla\CMS\Form\Form $form, $data, $group = 'mcp')
     {
         parent::preprocessForm($form, $data, $group);
+
         // Generate a sort list for the "ordering" field
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
