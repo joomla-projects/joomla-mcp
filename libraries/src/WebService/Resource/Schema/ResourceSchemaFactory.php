@@ -18,6 +18,7 @@ use Joomla\CMS\WebService\Resource\Attribute\Property\Hidden;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Items;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Optional;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Required;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Source;
 use Joomla\CMS\WebService\Resource\Attribute\Property\WriteOnly;
 use Joomla\CMS\WebService\Resource\ResourceInterface;
 use Joomla\CMS\WebService\Resource\ResourceProfile;
@@ -41,17 +42,17 @@ final class ResourceSchemaFactory
         $reflection = new \ReflectionClass($className);
         $isResource = $reflection->implementsInterface(ResourceInterface::class);
         $properties = [];
-        $required   = [];
-        $defaults   = $reflection->getDefaultProperties();
+        $required = [];
+        $defaults = $reflection->getDefaultProperties();
 
         foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
             if ($property->isStatic()) {
                 continue;
             }
 
-            $guarded   = $this->firstAttribute($property, Guarded::class) !== null;
+            $guarded = $this->firstAttribute($property, Guarded::class) !== null;
             $writeOnly = $this->firstAttribute($property, WriteOnly::class) !== null;
-            $hidden    = $this->firstAttribute($property, Hidden::class);
+            $hidden = $this->firstAttribute($property, Hidden::class);
 
             if ($hidden instanceof Hidden && $hidden->appliesTo($profile)) {
                 continue;
@@ -73,9 +74,10 @@ final class ResourceSchemaFactory
                 continue;
             }
 
-            $schema      = $this->schemaForType($property->getType(), $property, $profile);
+            $schema = $this->schemaForType($property->getType(), $property, $profile);
             $description = $this->firstAttribute($property, Description::class);
-            $example     = $this->firstAttribute($property, Example::class);
+            $example = $this->firstAttribute($property, Example::class);
+            $source = $this->sourceForProfile($property, $profile);
 
             if ($description instanceof Description) {
                 $schema['description'] = $description->description;
@@ -85,7 +87,11 @@ final class ResourceSchemaFactory
                 $schema['example'] = $example->example;
             }
 
-            if (\array_key_exists($property->getName(), $defaults)) {
+            if ($source instanceof Source && $source->name !== $property->getName()) {
+                $schema['x-joomla-source'] = $source->name;
+            }
+
+            if (array_key_exists($property->getName(), $defaults)) {
                 $default = $defaults[$property->getName()];
 
                 if (\is_scalar($default) || $default === null || \is_array($default)) {
@@ -109,9 +115,9 @@ final class ResourceSchemaFactory
         }
 
         $schema = [
-            'type'                 => 'object',
+            'type' => 'object',
             'additionalProperties' => $this->allowsAdditionalProperties($reflection),
-            'properties'           => $properties,
+            'properties' => $properties,
         ];
 
         if ($required !== []) {
@@ -143,9 +149,9 @@ final class ResourceSchemaFactory
         }
 
         return match ($profile) {
-            ResourceProfile::CREATE                      => !$property->hasDefaultValue(),
+            ResourceProfile::CREATE => !$property->hasDefaultValue(),
             ResourceProfile::READ, ResourceProfile::LIST => !$this->allowsNull($property->getType()),
-            default                                      => false,
+            default => false,
         };
     }
 
@@ -193,17 +199,17 @@ final class ResourceSchemaFactory
 
         if ($type->isBuiltin()) {
             return match ($typeName) {
-                'int'    => ['type' => 'integer'],
-                'float'  => ['type' => 'number'],
-                'bool'   => ['type' => 'boolean'],
+                'int' => ['type' => 'integer'],
+                'float' => ['type' => 'number'],
+                'bool' => ['type' => 'boolean'],
                 'string' => ['type' => 'string'],
-                'array'  => [
-                    'type'  => 'array',
+                'array' => [
+                    'type' => 'array',
                     'items' => $this->arrayItemSchema($property, $profile),
                 ],
                 'object' => ['type' => 'object'],
-                'null'   => ['type' => 'null'],
-                default  => [],
+                'null' => ['type' => 'null'],
+                default => [],
             };
         }
 
@@ -256,7 +262,7 @@ final class ResourceSchemaFactory
     {
         return match ($type) {
             'integer', 'number', 'string', 'boolean', 'object' => ['type' => $type],
-            default                                            => class_exists($type) ? $this->create($type, $profile) : [],
+            default => class_exists($type) ? $this->create($type, $profile) : [],
         };
     }
 
@@ -270,6 +276,20 @@ final class ResourceSchemaFactory
     private function allowsNull(?\ReflectionType $type): bool
     {
         return $type?->allowsNull() ?? true;
+    }
+
+
+    private function sourceForProfile(\ReflectionProperty $property, string $profile): ?Source
+    {
+        foreach ($property->getAttributes(Source::class) as $attribute) {
+            $source = $attribute->newInstance();
+
+            if ($source->appliesTo($profile)) {
+                return $source;
+            }
+        }
+
+        return null;
     }
 
     private function firstAttribute(\ReflectionProperty $property, string $attributeClass): ?object

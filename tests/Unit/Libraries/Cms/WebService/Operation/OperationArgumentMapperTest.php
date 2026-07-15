@@ -22,6 +22,17 @@ final class OperationArgumentMapperTest extends TestCase
         self::assertSame(['title' => 'Changed title'], $input->body);
     }
 
+    public function testCanonicalResourceNamesMapToEstablishedRestNames(): void
+    {
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
+        $input = (new OperationArgumentMapper())->map(
+            $operation,
+            ['id' => 7, 'category' => 2],
+        );
+
+        self::assertSame(['catid' => 2], $input->body);
+    }
+
     public function testListArgumentsUseJoomlaQueryParameterNames(): void
     {
         $operation = (new OperationCompiler())->compile(ArticlesController::class)[0];

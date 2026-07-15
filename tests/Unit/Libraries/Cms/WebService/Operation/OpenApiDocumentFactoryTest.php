@@ -27,5 +27,10 @@ final class OpenApiDocumentFactoryTest extends TestCase
             'requestBody',
             $document['paths']['/v1/content/articles']['post'],
         );
+        $createSchema = $document['paths']['/v1/content/articles']['post']['requestBody']['content']
+            ['application/json']['schema'];
+        self::assertArrayHasKey('catid', $createSchema['properties']);
+        self::assertArrayNotHasKey('category', $createSchema['properties']);
+        self::assertContains('catid', $createSchema['required']);
     }
 }
