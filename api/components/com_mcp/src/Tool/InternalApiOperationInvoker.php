@@ -10,7 +10,6 @@
 
 namespace Joomla\Component\MCP\Api\Tool;
 
-use Joomla\CMS\WebService\Internal\ComponentApiDispatcher;
 use Joomla\CMS\WebService\Internal\InternalApiDispatcherInterface;
 use Joomla\CMS\WebService\Operation\OperationArgumentMapper;
 use Joomla\CMS\WebService\Operation\OperationDefinition;
@@ -27,9 +26,10 @@ use Joomla\CMS\WebService\Operation\OperationDefinition;
 final class InternalApiOperationInvoker implements OperationInvokerInterface
 {
     public function __construct(
-        private readonly OperationArgumentMapper $argumentMapper = new OperationArgumentMapper(),
-        private readonly InternalApiDispatcherInterface $dispatcher = new ComponentApiDispatcher(),
-    ) {
+        private readonly OperationArgumentMapper        $argumentMapper,
+        private readonly InternalApiDispatcherInterface $dispatcher,
+    )
+    {
     }
 
     public function invoke(OperationDefinition $operation, array $arguments): OperationResult
@@ -69,18 +69,16 @@ final class InternalApiOperationInvoker implements OperationInvokerInterface
     }
 
     /**
-     * @param array<string, mixed> $resource
+     * @param array<string, mixed> $resource JSON:API resource object.
      *
-     * @return array<string, mixed>
+     * @return  array<string, mixed>
      */
     private function normaliseJsonApiResource(array $resource): array
     {
         $normalised = \is_array($resource['attributes'] ?? null) ? $resource['attributes'] : [];
 
         if (\array_key_exists('id', $resource) && !\array_key_exists('id', $normalised)) {
-            $normalised['id'] = ctype_digit((string) $resource['id'])
-                ? (int) $resource['id']
-                : $resource['id'];
+            $normalised['id'] = ctype_digit((string)$resource['id']) ? (int)$resource['id'] : $resource['id'];
         }
 
         return $normalised;

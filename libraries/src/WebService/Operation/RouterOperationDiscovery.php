@@ -28,10 +28,11 @@ final class RouterOperationDiscovery
     private ?array $operations = null;
 
     public function __construct(
-        private readonly ApiRouter $router,
-        private readonly OperationCompiler $compiler = new OperationCompiler(),
-        private readonly ControllerClassResolver $controllerResolver = new ControllerClassResolver(),
-    ) {
+        private readonly ApiRouter               $router,
+        private readonly OperationCompiler       $compiler,
+        private readonly ControllerClassResolver $controllerResolver,
+    )
+    {
     }
 
     /**
@@ -86,7 +87,7 @@ final class RouterOperationDiscovery
     }
 
     /**
-     * @param   list<Route>  $routes  Registered routes.
+     * @param list<Route> $routes Registered routes.
      *
      * @since   __DEPLOY_VERSION__
      */

@@ -10,13 +10,17 @@
 
 namespace Joomla\Plugin\Mcp\Joomla\Extension;
 
+use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\ApiRouter;
+use Joomla\CMS\WebService\Internal\ComponentApiDispatcher;
+use Joomla\CMS\WebService\Operation\ControllerClassResolver;
+use Joomla\CMS\WebService\Operation\OperationArgumentMapper;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
 use Joomla\CMS\WebService\Operation\RouterOperationDiscovery;
-use Joomla\Component\MCP\Administrator\Event\InitialiseMCPServerEvent;
+use Joomla\Component\MCP\Api\Event\RegisterMcpAbilitiesEvent;
 use Joomla\Component\MCP\Api\Tool\InternalApiOperationInvoker;
-use Joomla\Component\MCP\Api\Tool\WebserviceToolProvider;
+use Joomla\Component\MCP\Api\Tool\WebserviceToolFactory;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Mcp\Joomla\Resource\ApplicationConfig;
 use Joomla\Plugin\Mcp\Joomla\Resource\SysInfo;
@@ -32,11 +36,11 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'initialiseMCPServerEvent' => 'registerAbilities',
+            RegisterMcpAbilitiesEvent::NAME => 'registerAbilities',
         ];
     }
 
-    public function registerAbilities(InitialiseMCPServerEvent $event): void
+    public function registerAbilities(RegisterMcpAbilitiesEvent $event): void
     {
         $this->loadLanguage();
 
@@ -44,13 +48,32 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
         $event->addAbility(new ApplicationConfig());
         $event->addAbility(new SysInfo());
 
-        $compiler = new OperationCompiler();
-        $router = $this->getApplication()->getContainer()->get(ApiRouter::class);
-        $discovery = new RouterOperationDiscovery($router, $compiler);
-        $provider = new WebserviceToolProvider($compiler, new InternalApiOperationInvoker());
+        $application = $this->getApplication();
 
-        foreach ($provider->getToolsFromOperations($discovery->discover()) as $tool) {
-            $event->addAbility($tool);
+        if (!$application instanceof CMSApplication || !$application->isClient('api')) {
+            throw new \RuntimeException('Generated web service tools require the Joomla API application.');
+        }
+
+        $compiler = new OperationCompiler();
+        $router = $application->getContainer()->get(ApiRouter::class);
+        $discovery = new RouterOperationDiscovery(
+            $router,
+            $compiler,
+            new ControllerClassResolver(),
+        );
+        $toolFactory = new WebserviceToolFactory(
+            new InternalApiOperationInvoker(
+                new OperationArgumentMapper(),
+                new ComponentApiDispatcher($application),
+            ),
+        );
+
+        foreach ($discovery->discover() as $operation) {
+            if (!$operation->exposeToMcp) {
+                continue;
+            }
+
+            $event->addAbility($toolFactory->create($operation));
         }
     }
 }

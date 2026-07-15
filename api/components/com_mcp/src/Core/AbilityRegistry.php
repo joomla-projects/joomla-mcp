@@ -1,176 +1,106 @@
 <?php
 
 /**
- * @package         Joomla.MCP
- * @subpackage      com_mcp
+ * @package     Joomla.API
+ * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Api\Core;
 
-// phpcs:disable PSR1.Files.SideEffects
-\defined('_JEXEC') or die;
-// phpcs:enable PSR1.Files.SideEffects
-
 use Joomla\Component\MCP\Api\Prompt\PromptInterface;
 use Joomla\Component\MCP\Api\Resource\ResourceInterface;
 use Joomla\Component\MCP\Api\Resource\ResourceTemplateInterface;
 use Joomla\Component\MCP\Api\Tool\ToolInterface;
 
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
+
 /**
- * Registry for MCP tools
+ * Registry for MCP tools, resources, resource templates and prompts.
  *
  * @since  __DEPLOY_VERSION__
  */
-class AbilityRegistry
+final class AbilityRegistry
 {
-    /**
-     * @var ToolInterface[] Registered tools
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    protected array $tools = [];
+    /** @var array<string, ToolInterface> */
+    private array $tools = [];
 
-    /**
-     * @var ResourceInterface[] Registered resources
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    protected array $resources = [];
+    /** @var array<string, ResourceInterface> */
+    private array $resources = [];
 
-    /**
-     * @var ResourceTemplateInterface[] Registered resources
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    protected array $resourceTemplates = [];
+    /** @var array<string, ResourceTemplateInterface> */
+    private array $resourceTemplates = [];
 
-    /**
-     * @var PromptInterface[] Registered resources
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    protected array $prompts = [];
+    /** @var array<string, PromptInterface> */
+    private array $prompts = [];
 
-    public function __construct()
+    public function addAbility(
+        PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability,
+    ): void
     {
-    }
-
-    public function addAbility(PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability): void
-    {
-        switch (true) {
-            case $ability instanceof PromptInterface:
-                $this->prompts[$ability->getName()] = $ability;
-                break;
-            case $ability instanceof ResourceInterface:
-                $this->resources[$ability->getUri()] = $ability;
-                break;
-            case $ability instanceof ResourceTemplateInterface:
-                $this->resourceTemplates[$ability->getName()] = $ability;
-                break;
-            case $ability instanceof ToolInterface:
-                $this->tools[$ability->getName()] = $ability;
-                break;
-        }
+        match (true) {
+            $ability instanceof PromptInterface => $this->prompts[$ability->getName()] = $ability,
+            $ability instanceof ResourceInterface => $this->resources[$ability->getUri()] = $ability,
+            $ability instanceof ResourceTemplateInterface => $this->resourceTemplates[$ability->getName()] = $ability,
+            $ability instanceof ToolInterface => $this->tools[$ability->getName()] = $ability,
+        };
     }
 
     /**
-     * Get all registered tools
-     *
-     * @return ToolInterface[]
-     *
-     * @since  __DEPLOY_VERSION__
+     * @return array<string, ToolInterface>
      */
     public function getTools(): array
     {
         return $this->tools;
     }
 
-    /**
-     * Get all registered tools
-     *
-     * @return ToolInterface
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public function getTool($name): ToolInterface
+    public function getTool(string $name): ?ToolInterface
     {
-        return $this->tools[$name];
+        return $this->tools[$name] ?? null;
     }
 
     /**
-     * Get all registered resources
-     *
-     * @return ResourceInterface[]
-     *
-     * @since  __DEPLOY_VERSION__
+     * @return array<string, ResourceInterface>
      */
     public function getResources(): array
     {
         return $this->resources;
     }
 
-    /**
-     * Get all registered resources
-     *
-     * @return ResourceInterface
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public function getResource($uri): ResourceInterface
+    public function getResource(string $uri): ?ResourceInterface
     {
-        return $this->resources[$uri];
+        return $this->resources[$uri] ?? null;
     }
 
     /**
-     * Get all registered resourceTemplates
-     *
-     * @return ResourceTemplateInterface[]
-     *
-     * @since  __DEPLOY_VERSION__
+     * @return array<string, ResourceTemplateInterface>
      */
     public function getResourceTemplates(): array
     {
         return $this->resourceTemplates;
     }
 
-    /**
-     * Get all registered resources
-     *
-     * @return ResourceTemplateInterface
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public function getResourceTemplate($name): ResourceTemplateInterface
+    public function getResourceTemplate(string $name): ?ResourceTemplateInterface
     {
-        return $this->resourceTemplates[$name];
+        return $this->resourceTemplates[$name] ?? null;
     }
 
     /**
-     * Get all registered resourceTemplates
-     *
-     * @return PromptInterface[]
-     *
-     * @since  __DEPLOY_VERSION__
+     * @return array<string, PromptInterface>
      */
     public function getPrompts(): array
     {
         return $this->prompts;
     }
 
-    /**
-     * Get all registered resources
-     *
-     * @return PromptInterface
-     *
-     * @since  __DEPLOY_VERSION__
-     */
-    public function getPrompt($name): PromptInterface
+    public function getPrompt(string $name): ?PromptInterface
     {
-        return $this->prompts[$name];
+        return $this->prompts[$name] ?? null;
     }
 }

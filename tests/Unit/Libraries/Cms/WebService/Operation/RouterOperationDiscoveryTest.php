@@ -4,6 +4,7 @@ namespace Joomla\Tests\Unit\Libraries\Cms\WebService\Operation;
 
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Router\ApiRouter;
+use Joomla\CMS\WebService\Operation\ControllerClassResolver;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
 use Joomla\CMS\WebService\Operation\RestRouteFactory;
 use Joomla\CMS\WebService\Operation\RouterOperationDiscovery;
@@ -23,7 +24,7 @@ final class RouterOperationDiscoveryTest extends TestCase
             $router->addRoute($factory->create($operation));
         }
 
-        $operations = (new RouterOperationDiscovery($router, $compiler))->discover();
+        $operations = (new RouterOperationDiscovery($router, $compiler, new ControllerClassResolver()))->discover();
 
         self::assertSame(
             [
@@ -50,7 +51,12 @@ final class RouterOperationDiscoveryTest extends TestCase
             ),
         );
 
-        $operations = (new RouterOperationDiscovery($router))->discover();
+        $discovery = new RouterOperationDiscovery(
+            $router,
+            new OperationCompiler(),
+            new ControllerClassResolver(),
+        );
+        $operations = $discovery->discover();
 
         self::assertCount(1, $operations);
         self::assertSame('content.articles.list', $operations[0]->operationId);
@@ -69,7 +75,12 @@ final class RouterOperationDiscoveryTest extends TestCase
             ),
         );
 
-        $operations = (new RouterOperationDiscovery($router))->discover();
+        $discovery = new RouterOperationDiscovery(
+            $router,
+            new OperationCompiler(),
+            new ControllerClassResolver(),
+        );
+        $operations = $discovery->discover();
 
         self::assertCount(1, $operations);
         self::assertSame('content.articles.update', $operations[0]->operationId);
@@ -89,7 +100,13 @@ final class RouterOperationDiscoveryTest extends TestCase
             ),
         );
 
-        self::assertSame([], (new RouterOperationDiscovery($router))->discover());
+        $discovery = new RouterOperationDiscovery(
+            $router,
+            new OperationCompiler(),
+            new ControllerClassResolver(),
+        );
+
+        self::assertSame([], $discovery->discover());
     }
 
     private function createRouter(): ApiRouter
