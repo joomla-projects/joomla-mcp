@@ -3,13 +3,14 @@
     <help key="MCP:_Options"/>
     <inlinehelp button="show"/>
     <fieldset name="basic" label="COM_MCP_FIELDSET_BASIC">
-        <field name="enabled"
-               type="radio"
-               default="0"
-               class="btn-group btn-group-yesno"
-               label="COM_MCP_ENABLED_LABEL"
-               description="COM_MCP_ENABLED_DESC"
-        >
+        <field 
+			name="enabled"
+            type="radio"
+            label="COM_MCP_ENABLED_LABEL"
+            description="COM_MCP_ENABLED_DESC"
+            default="0"
+            class="btn-group btn-group-yesno"
+            >
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
@@ -19,13 +20,14 @@
               label="JCONFIG_PERMISSIONS_LABEL"
     >
 
-        <field name="rules"
-               type="rules"
-               label="JCONFIG_PERMISSIONS_LABEL"
-               filter="rules"
-               validate="rules"
-               component="com_mcp"
-               section="component"
+        <field 
+			name="rules"
+            type="rules"
+            label="JCONFIG_PERMISSIONS_LABEL"
+            filter="rules"
+            validate="rules"
+            component="com_mcp"
+            section="component"
         />
 
     </fieldset>
