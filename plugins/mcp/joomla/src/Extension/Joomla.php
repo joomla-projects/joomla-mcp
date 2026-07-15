@@ -54,8 +54,8 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
             throw new \RuntimeException('Generated web service tools require the Joomla API application.');
         }
 
-        $compiler = new OperationCompiler();
-        $router = $application->getContainer()->get(ApiRouter::class);
+        $compiler  = new OperationCompiler();
+        $router    = $application->getContainer()->get(ApiRouter::class);
         $discovery = new RouterOperationDiscovery(
             $router,
             $compiler,

@@ -39,8 +39,7 @@ final class RegisterMcpAbilitiesEvent extends Event
 
     public function addAbility(
         PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability,
-    ): void
-    {
+    ): void {
         $this->arguments['abilities']->addAbility($ability);
     }
 }

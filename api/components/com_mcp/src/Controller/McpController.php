@@ -52,7 +52,7 @@ final class McpController extends BaseController
             $this->sendResponse(
                 new JsonResponse(
                     [
-                        'error' => 'Service Unavailable',
+                        'error'   => 'Service Unavailable',
                         'message' => 'The MCP server is disabled.',
                     ],
                     503,
@@ -63,11 +63,11 @@ final class McpController extends BaseController
         }
 
         $abilityRegistry = $this->collectAbilities();
-        $authService = $this->app->get('mcp.authService');
-        $config = ['logger' => $this->logger];
-        $endpoint = new McpEndpoint($abilityRegistry, $authService, $config);
-        $request = HttpMessage::fromGlobals();
-        $result = $endpoint->handle($request);
+        $authService     = $this->app->get('mcp.authService');
+        $config          = ['logger' => $this->logger];
+        $endpoint        = new McpEndpoint($abilityRegistry, $authService, $config);
+        $request         = HttpMessage::fromGlobals();
+        $result          = $endpoint->handle($request);
 
         $this->sendResponse($result);
         $this->app->close();

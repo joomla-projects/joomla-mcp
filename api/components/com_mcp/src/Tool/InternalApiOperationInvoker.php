@@ -28,8 +28,7 @@ final class InternalApiOperationInvoker implements OperationInvokerInterface
     public function __construct(
         private readonly OperationArgumentMapper        $argumentMapper,
         private readonly InternalApiDispatcherInterface $dispatcher,
-    )
-    {
+    ) {
     }
 
     public function invoke(OperationDefinition $operation, array $arguments): OperationResult
