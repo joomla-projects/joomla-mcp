@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Joomla\Component\MCP\Administrator\Model;
 
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\AdminModel;

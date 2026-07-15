@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Joomla.Administrator
  * @subpackage      com_mcp
@@ -7,7 +8,9 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -41,7 +44,7 @@ if ($saveOrder && !empty($this->items)) {
                 <?php
                 // Search tools bar
                 echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]);
-?>
+                ?>
                 <?php if (empty($this->items)) : ?>
                     <div class="alert alert-info">
                         <span class="icon-info-circle" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('INFO'); ?></span>
@@ -76,7 +79,7 @@ if ($saveOrder && !empty($this->items)) {
                         </thead>
                         <tbody <?php if ($saveOrder) :
                             ?> class="js-draggable" data-url="<?php echo $saveOrderingUrl; ?>" data-direction="<?php echo strtolower($listDirn); ?>"<?php
-                        endif; ?>>
+                               endif; ?>>
                         <?php foreach ($this->items as $i => $item) :
                             $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || \is_null($item->checked_out);
                             $canChange  = $user->authorise('core.edit.state', 'com_mcp') && $canCheckin;
@@ -89,12 +92,12 @@ if ($saveOrder && !empty($this->items)) {
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php
                                     $iconClass = '';
-                            if (!$canChange) {
-                                $iconClass = ' inactive';
-                            } elseif (!$saveOrder) {
-                                $iconClass = ' inactive" title="' . Text::_('JORDERINGDISABLED');
-                            }
-                            ?>
+                                    if (!$canChange) {
+                                        $iconClass = ' inactive';
+                                    } elseif (!$saveOrder) {
+                                        $iconClass = ' inactive" title="' . Text::_('JORDERINGDISABLED');
+                                    }
+                                    ?>
                                     <span class="sortable-handler <?php echo $iconClass ?>">
                                         <span class="icon-ellipsis-v" aria-hidden="true"></span>
                                     </span>
