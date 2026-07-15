@@ -43,9 +43,9 @@ final class ControllerClassResolver
      */
     public function resolve(Route $route): ?string
     {
-        $defaults = $route->getDefaults();
+        $defaults  = $route->getDefaults();
         $component = $defaults['component'] ?? null;
-        $target = $route->getController();
+        $target    = $route->getController();
 
         if (!\is_string($component) || !str_starts_with($component, 'com_') || !\is_string($target)) {
             return null;
@@ -57,8 +57,8 @@ final class ControllerClassResolver
             return null;
         }
 
-        $componentName = $this->inflector->classify(substr($component, 4));
-        $controllerName = $this->inflector->classify($targetParts[0]);
+        $componentName   = $this->inflector->classify(substr($component, 4));
+        $controllerName  = $this->inflector->classify($targetParts[0]);
         $controllerClass = \sprintf(
             'Joomla\\Component\\%s\\Api\\Controller\\%sController',
             $componentName,
