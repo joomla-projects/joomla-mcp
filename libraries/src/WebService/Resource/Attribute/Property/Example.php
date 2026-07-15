@@ -10,7 +10,7 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Example extends \Attribute
+class Example
 {
     public function __construct(
         string $example

@@ -10,6 +10,6 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Guarded extends \Attribute
+class Guarded
 {
 }

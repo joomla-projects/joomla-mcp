@@ -25,17 +25,17 @@
 		<field
 			name="claude_code_cli"
 			type="mcpconfig"
-			subtype="claudecode"
 			label="COM_MCP_FIELD_MCP_CONFIG_CLAUDE_CODE_TITLE"
 			description="COM_MCP_FIELD_MCP_CONFIG_CLAUDE_CODE_DESC"
+			subtype="claudecode"
 		/>
 
 		<field
 			name="full_config"
 			type="mcpconfig"
-			subtype="fullconfig"
 			label="COM_MCP_FIELD_MCP_CONFIG_FULL_TITLE"
 			description="COM_MCP_FIELD_MCP_CONFIG_FULL_DESC"
+			subtype="fullconfig"
 		/>
 
 		<field
@@ -52,7 +52,7 @@
 			class="form-select-color-state"
 			default="1"
 			validate="options"
-		>
+			>
 			<option value="1">JPUBLISHED</option>
 			<option value="0">JUNPUBLISHED</option>
 			<option value="2">JARCHIVED</option>
