@@ -125,6 +125,7 @@ namespace {
     use Joomla\Component\Content\Api\Controller\ArticlesController;
     use Joomla\Component\Content\Api\Resource\Article;
     use Joomla\Component\MCP\Api\Core\AbilityRegistry;
+    use Joomla\Component\MCP\Api\Tool\HttpOperationInvoker;
     use Joomla\Component\MCP\Api\Tool\OperationInvokerInterface;
     use Joomla\Component\MCP\Api\Tool\OperationResult;
     use Joomla\Component\MCP\Api\Tool\WebserviceToolProvider;
@@ -139,7 +140,10 @@ namespace {
     $createSchema  = $schemaFactory->create(Article::class, ResourceProfile::CREATE);
     $updateSchema  = $schemaFactory->create(Article::class, ResourceProfile::UPDATE);
 
-    $assert($createSchema['required'] === ['title', 'category'], 'Unexpected create requirements.');
+    $assert(
+        $createSchema['required'] === ['title', 'articletext', 'category'],
+        'Unexpected create requirements.',
+    );
     $assert(!isset($createSchema['properties']['id']), 'Guarded ID leaked into the create schema.');
     $assert(($updateSchema['minProperties'] ?? null) === 1, 'PATCH must require one changed property.');
 
@@ -179,6 +183,12 @@ namespace {
     $assert($mappedInput->path === ['id' => 7], 'The path argument mapping is incorrect.');
     $assert($mappedInput->body === ['title' => 'Changed title'], 'The request body mapping is incorrect.');
 
+    $mappedCategoryInput = (new OperationArgumentMapper())->map(
+        $operations[3],
+        ['id' => 7, 'category' => 2],
+    );
+    $assert($mappedCategoryInput->body === ['catid' => 2], 'The REST source-name mapping is incorrect.');
+
     $routeFactory = new RestRouteFactory();
     $routes       = array_map($routeFactory->create(...), $operations);
     $assert(\count($routes) === 5, 'The REST projection did not create five routes.');
@@ -191,6 +201,47 @@ namespace {
             === 'content.articles.update',
         'The OpenAPI update projection is incorrect.',
     );
+    $openApiCreateSchema = $openApi['paths']['/v1/content/articles']['post']['requestBody']['content']
+        ['application/json']['schema'];
+    $assert(isset($openApiCreateSchema['properties']['catid']), 'The OpenAPI REST schema is missing catid.');
+    $assert(!isset($openApiCreateSchema['properties']['category']), 'A canonical property leaked into REST OpenAPI.');
+
+    $capturedRequest = null;
+    $httpInvoker = new HttpOperationInvoker(
+        new OperationArgumentMapper(),
+        'https://example.test/api/index.php/',
+        static fn (): string => 'test-token',
+        static function (
+            string $method,
+            string $url,
+            array $headers,
+            ?string $body,
+            int $timeout,
+        ) use (&$capturedRequest): OperationResult {
+            $capturedRequest = compact('method', 'url', 'headers', 'body', 'timeout');
+
+            return new OperationResult(
+                200,
+                ['data' => ['id' => '7', 'attributes' => ['title' => 'Changed title']]],
+                'application/vnd.api+json',
+            );
+        },
+    );
+    $httpResult = $httpInvoker->invoke(
+        $operations[3],
+        ['id' => 7, 'title' => 'Changed title', 'category' => 2],
+    );
+    $assert(
+        $capturedRequest['url'] === 'https://example.test/api/index.php/v1/content/articles/7',
+        'The HTTP invoker URL is incorrect.',
+    );
+    $assert(
+        json_decode($capturedRequest['body'], true, 512, JSON_THROW_ON_ERROR)
+            === ['title' => 'Changed title', 'catid' => 2],
+        'The HTTP invoker body is incorrect.',
+    );
+    $assert($capturedRequest['headers']['X-Joomla-Token'] === 'test-token', 'The token was not forwarded.');
+    $assert($httpResult->body === ['title' => 'Changed title', 'id' => 7], 'JSON:API was not normalised.');
 
     $invoker = new class () implements OperationInvokerInterface {
         public function invoke(OperationDefinition $operation, array $arguments): OperationResult

@@ -16,6 +16,7 @@ use Joomla\CMS\WebService\Resource\Attribute\Property\Example;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Hidden;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Items;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Source;
 use Joomla\CMS\WebService\Resource\Attribute\Property\WriteOnly;
 use Joomla\CMS\WebService\Resource\Resource;
 use Joomla\CMS\WebService\Resource\ResourceProfile;
@@ -46,6 +47,10 @@ final class Article extends Resource
     public string $text;
 
     #[WriteOnly]
+    #[Description('The complete article text accepted by the established create endpoint.')]
+    public string $articletext;
+
+    #[WriteOnly]
     public string $introtext = '';
 
     #[WriteOnly]
@@ -64,6 +69,7 @@ final class Article extends Resource
     public int $state = 0;
 
     #[Description('The category identifier.')]
+    #[Source('catid')]
     public int $category;
 
     public array $images                     = [];

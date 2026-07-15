@@ -24,14 +24,14 @@ final class OperationArgumentMapper
      */
     public function map(OperationDefinition $operation, array $arguments): OperationInput
     {
-        $path  = [];
+        $path = [];
         $query = [];
-        $body  = [];
+        $body = [];
 
         foreach ($operation->pathParameters as $transportName => $parameter) {
             $argumentName = $parameter['argument'] ?? $transportName;
 
-            if (\array_key_exists($argumentName, $arguments)) {
+            if (array_key_exists($argumentName, $arguments)) {
                 $path[$transportName] = $arguments[$argumentName];
             }
         }
@@ -39,15 +39,18 @@ final class OperationArgumentMapper
         foreach ($operation->queryParameters as $transportName => $parameter) {
             $argumentName = $parameter['argument'] ?? $transportName;
 
-            if (\array_key_exists($argumentName, $arguments)) {
+            if (array_key_exists($argumentName, $arguments)) {
                 $query[$transportName] = $arguments[$argumentName];
             }
         }
 
         foreach ($operation->requestBodySchema['properties'] ?? [] as $name => $schema) {
-            if (\array_key_exists($name, $arguments)) {
-                $body[$name] = $arguments[$name];
+            if (!array_key_exists($name, $arguments)) {
+                continue;
             }
+
+            $transportName = $schema['x-joomla-source'] ?? $name;
+            $body[$transportName] = $arguments[$name];
         }
 
         return new OperationInput($path, $query, $body);
