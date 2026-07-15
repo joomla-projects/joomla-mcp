@@ -31,7 +31,7 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
-        $user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+        $user = Factory::getApplication()->getIdentity();
 
         $isNew = ($this->item->id == 0);
         ToolbarHelper::title($isNew ? Text::_('COM_MCP_FORM_TITLE_NEW') : Text::_('COM_MCP_FORM_TITLE_EDIT'), 'cog');
