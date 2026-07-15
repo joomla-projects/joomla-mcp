@@ -21,13 +21,34 @@ use Joomla\Component\Content\Api\Resource\Enum\ArticleState;
  */
 final class ArticleListQuery
 {
-    public ?int $author         = null;
-    public ?int $category       = null;
+    #[Description('Only articles created by this user identifier.')]
+    public ?int $author = null;
+
+    #[Description('Only articles in this category identifier. The category is addressed as catid on the article itself.')]
+    public ?int $category = null;
+
+    #[Description('Only articles in this publication state: 1 published, 0 unpublished, 2 archived or -2 trashed. Omit to use the default, which returns published and unpublished articles.')]
+    #[Example(1)]
     public ?ArticleState $state = null;
-    public ?int $featured       = null;
-    public ?int $tag            = null;
-    public ?string $language    = null;
-    public ?string $search      = null;
+
+    #[Description('Only featured articles when 1, only articles that are not featured when 0.')]
+    #[Example(1)]
+    public ?int $featured = null;
+
+    #[Description('Only articles carrying this tag identifier.')]
+    public ?int $tag = null;
+
+    #[Description('Only articles in this language code. Articles assigned to all languages use *.')]
+    #[Example('en-GB')]
+    public ?string $language = null;
+
+    #[Description(
+        'Free text matched against the title and alias. A prefix narrows the search instead: "id:5" matches one '
+        . 'identifier, "author:jane" the author name or username, "content:draft" the article text, and '
+        . '"checkedout:jane" the name or username of the user holding the check-out.'
+    )]
+    #[Example('content:release notes')]
+    public ?string $search = null;
 
     #[Description('Only articles modified at or after this moment.')]
     public ?\DateTimeImmutable $modified_start = null;
@@ -42,7 +63,13 @@ final class ArticleListQuery
     #[Description('The workflow stage identifier. Ignored unless the "Enable Workflow" option is turned on for com_content.')]
     public ?int $stage = null;
 
-    #[Description('The model field used to order the result set.')]
+    #[Description(
+        'The field the result set is ordered by. Accepts: id, title, alias, catid, category_title, state, access, '
+        . 'access_level, created, created_by, created_by_alias, modified, ordering, featured, featured_up, '
+        . 'featured_down, language, hits, publish_up, publish_down, checked_out, checked_out_time, author_id, '
+        . 'category_id, level or tag.'
+    )]
+    #[Example('created')]
     public string $ordering = 'id';
 
     #[Description('The ordering direction. Accepts: asc, desc.')]

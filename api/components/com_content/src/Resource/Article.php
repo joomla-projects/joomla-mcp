@@ -36,9 +36,11 @@ final class Article extends Resource
     #[Guarded]
     public int $id;
 
+    #[Description('The Joomla content type of this item, always com_content.article.')]
     #[Guarded]
     public string $typeAlias;
 
+    #[Description('The identifier of the ACL asset backing this article.')]
     #[Guarded]
     public int $asset_id;
 
@@ -48,6 +50,7 @@ final class Article extends Resource
     #[Description('The complete article text accepted by the established create endpoint.')]
     public string $text;
 
+    #[Description('Tag identifiers when writing. Reading returns the full tag objects.')]
     #[Items('integer', [ResourceProfile::CREATE, ResourceProfile::UPDATE])]
     #[Items('object', [ResourceProfile::READ, ResourceProfile::LIST])]
     public array $tags = [];
@@ -74,23 +77,40 @@ final class Article extends Resource
     #[Optional([ResourceProfile::CREATE])]
     public ArticleImage $images;
 
-    public string $metakey  = '';
+    #[Description('The meta keywords, as a comma separated list.')]
+    public string $metakey = '';
+
+    #[Description('The meta description conveyed in the description meta tag.')]
     public string $metadesc = '';
 
     #[Optional([ResourceProfile::CREATE])]
     public ArticleMetadata $metadata;
-    public int $access                       = 1;
-    public int $featured                     = 0;
-    public string $alias                     = '';
-    public ?string $note                     = null;
-    public ?\DateTimeImmutable $publish_up   = null;
+
+    #[Description('The identifier of the view access level that is allowed to see this article.')]
+    public int $access = 1;
+
+    #[Description('Whether the article is featured: 1 featured, 0 not featured.')]
+    public int $featured = 0;
+
+    #[Description('The alias used as part of the URL. Left empty, Joomla derives it from the title.')]
+    public string $alias = '';
+
+    #[Description('An internal note shown only in the administrator interface.')]
+    public ?string $note = null;
+
+    #[Description('When the article starts being published. Null publishes it immediately.')]
+    public ?\DateTimeImmutable $publish_up = null;
+
+    #[Description('When the article stops being published. Null never expires it.')]
     public ?\DateTimeImmutable $publish_down = null;
 
     #[Guarded]
     public \DateTimeImmutable $created;
 
     #[Description('The creating user identifier. A value of 0 uses the current user.')]
-    public int $created_by          = 0;
+    public int $created_by = 0;
+
+    #[Description('A display name shown instead of the author name, without changing who owns the article.')]
     public string $created_by_alias = '';
 
     #[Guarded]
@@ -106,7 +126,10 @@ final class Article extends Resource
     #[Guarded]
     public int $version;
 
-    public ?\DateTimeImmutable $featured_up   = null;
+    #[Description('When the article starts being featured. Only meaningful while featured is 1.')]
+    public ?\DateTimeImmutable $featured_up = null;
+
+    #[Description('When the article stops being featured. Only meaningful while featured is 1.')]
     public ?\DateTimeImmutable $featured_down = null;
 
     #[Optional([ResourceProfile::CREATE])]
