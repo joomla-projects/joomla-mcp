@@ -11,8 +11,9 @@
 namespace Joomla\Plugin\Mcp\Joomla\Extension;
 
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Router\ApiRouter;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
-use Joomla\Component\Content\Api\Controller\ArticlesController;
+use Joomla\CMS\WebService\Operation\RouterOperationDiscovery;
 use Joomla\Component\MCP\Administrator\Event\InitialiseMCPServerEvent;
 use Joomla\Component\MCP\Api\Tool\InternalApiOperationInvoker;
 use Joomla\Component\MCP\Api\Tool\WebserviceToolProvider;
@@ -43,12 +44,12 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
         $event->addAbility(new ApplicationConfig());
         $event->addAbility(new SysInfo());
 
-        $provider = new WebserviceToolProvider(
-            new OperationCompiler(),
-            new InternalApiOperationInvoker(),
-        );
+        $compiler = new OperationCompiler();
+        $router = $this->getApplication()->getContainer()->get(ApiRouter::class);
+        $discovery = new RouterOperationDiscovery($router, $compiler);
+        $provider = new WebserviceToolProvider($compiler, new InternalApiOperationInvoker());
 
-        foreach ($provider->getTools(ArticlesController::class) as $tool) {
+        foreach ($provider->getToolsFromOperations($discovery->discover()) as $tool) {
             $event->addAbility($tool);
         }
     }

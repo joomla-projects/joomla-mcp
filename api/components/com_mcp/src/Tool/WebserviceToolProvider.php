@@ -11,6 +11,7 @@
 namespace Joomla\Component\MCP\Api\Tool;
 
 use Joomla\CMS\WebService\Operation\OperationCompiler;
+use Joomla\CMS\WebService\Operation\OperationDefinition;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -31,17 +32,31 @@ final class WebserviceToolProvider
     }
 
     /**
-     * @param class-string $controllerClass
+     * @param   class-string  $controllerClass
      *
-     * @return list<WebserviceTool>
+     * @return  list<WebserviceTool>
      *
-     * @since  __DEPLOY_VERSION__
+     * @since   __DEPLOY_VERSION__
      */
     public function getTools(string $controllerClass): array
     {
+        return $this->getToolsFromOperations($this->compiler->compile($controllerClass));
+    }
+
+    /**
+     * Creates tools from already discovered operation definitions.
+     *
+     * @param   iterable<OperationDefinition>  $operations  Discovered operations.
+     *
+     * @return  list<WebserviceTool>
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function getToolsFromOperations(iterable $operations): array
+    {
         $tools = [];
 
-        foreach ($this->compiler->compile($controllerClass) as $operation) {
+        foreach ($operations as $operation) {
             if (!$operation->exposeToMcp) {
                 continue;
             }
@@ -53,9 +68,9 @@ final class WebserviceToolProvider
     }
 
     /**
-     * @param class-string $controllerClass
+     * @param   class-string  $controllerClass
      *
-     * @since  __DEPLOY_VERSION__
+     * @since   __DEPLOY_VERSION__
      */
     public function register(AbilityRegistry $registry, string $controllerClass): void
     {
