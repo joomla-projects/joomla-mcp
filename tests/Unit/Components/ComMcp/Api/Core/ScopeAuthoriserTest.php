@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.UnitTest
  * @subpackage  com_mcp
@@ -30,8 +31,8 @@ final class ScopeAuthoriserTest extends TestCase
     public function testAllowsPrincipalWithAllScopes(): void
     {
         $authoriser = new ScopeAuthoriser();
-        $tool = $this->tool(['content.articles:write']);
-        $principal = $this->principal(['mcp:use', 'content.articles:write']);
+        $tool       = $this->tool(['content.articles:write']);
+        $principal  = $this->principal(['mcp:use', 'content.articles:write']);
 
         $authoriser->assertToolAccess($principal, $tool);
         self::assertTrue($authoriser->canUseTool($principal, $tool));
@@ -40,8 +41,8 @@ final class ScopeAuthoriserTest extends TestCase
     public function testRejectsMissingOperationScope(): void
     {
         $authoriser = new ScopeAuthoriser();
-        $tool = $this->tool(['content.articles:write']);
-        $principal = $this->principal(['mcp:use']);
+        $tool       = $this->tool(['content.articles:write']);
+        $principal  = $this->principal(['mcp:use']);
 
         $this->expectException(InsufficientScopeException::class);
         $authoriser->assertToolAccess($principal, $tool);

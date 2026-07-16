@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.Administrator
  * @subpackage  com_mcp
@@ -52,7 +53,7 @@ return new class () implements ServiceProviderInterface {
             ComponentInterface::class,
             function (Container $container): ComponentInterface {
                 $mvcFactory = $container->get(MVCFactoryInterface::class);
-                $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
+                $component  = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
                 $component->setMVCFactory($mvcFactory);
 
                 $application = Factory::$application;
@@ -72,8 +73,8 @@ return new class () implements ServiceProviderInterface {
                         $configuration->allowedTypes,
                         $configuration->clockSkew,
                     );
-                    $contextFactory = new McpRequestContextFactory(new NumericSubjectResolver());
-                    $scopeAuthoriser = new ScopeAuthoriser($configuration->baseScope);
+                    $contextFactory   = new McpRequestContextFactory(new NumericSubjectResolver());
+                    $scopeAuthoriser  = new ScopeAuthoriser($configuration->baseScope);
                     $metadataProvider = new ProtectedResourceMetadataProvider(
                         $configuration->resource,
                         [$configuration->issuer],

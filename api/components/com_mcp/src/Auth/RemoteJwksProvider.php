@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.Administrator
  * @subpackage  com_mcp
@@ -72,7 +73,7 @@ final class RemoteJwksProvider implements JwksProviderInterface
             }
 
             // A key rotation may have happened before the local cache expired.
-            $document  = $this->fetchDocument();
+            $document   = $this->fetchDocument();
             $candidates = array_values(
                 array_filter(
                     $document['keys'] ?? [],

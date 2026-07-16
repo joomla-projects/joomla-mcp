@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.Libraries
  * @subpackage  WebService.Internal
@@ -122,7 +123,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         $query = [];
 
         foreach ($parameters as $name => $value) {
-            if (preg_match('/^([^\[]+)((?:\[[^\]]+\])+)$/' , $name, $matches) !== 1) {
+            if (preg_match('/^([^\[]+)((?:\[[^\]]+\])+)$/', $name, $matches) !== 1) {
                 $query[$name] = $value;
                 continue;
             }

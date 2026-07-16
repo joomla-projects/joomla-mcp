@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.Administrator
  * @subpackage  com_mcp
@@ -65,7 +66,7 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
         ResourceIdentifier $expectedResource,
     ): AccessTokenPrincipal {
         try {
-            [$header] = $this->decodeTokenParts($accessToken);
+            [$header]  = $this->decodeTokenParts($accessToken);
             $algorithm = $this->requiredString($header, 'alg');
             $type      = strtolower($this->requiredString($header, 'typ'));
 
@@ -199,7 +200,7 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
         $value = $values[$name] ?? null;
 
         if (!\is_string($value) || $value === '') {
-            throw new TokenValidationException(sprintf('The access token is missing the %s header.', $name));
+            throw new TokenValidationException(\sprintf('The access token is missing the %s header.', $name));
         }
 
         return $value;
@@ -217,7 +218,7 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
         $value = $claims[$name] ?? null;
 
         if (!\is_string($value) || $value === '') {
-            throw new TokenValidationException(sprintf('The access token is missing the %s claim.', $name));
+            throw new TokenValidationException(\sprintf('The access token is missing the %s claim.', $name));
         }
 
         return $value;
@@ -289,9 +290,9 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
      */
     private function rsaPublicKey(array $jwk): string
     {
-        $modulus  = $this->base64UrlDecode($this->requiredString($jwk, 'n'));
-        $exponent = $this->base64UrlDecode($this->requiredString($jwk, 'e'));
-        $rsaKey   = $this->asn1Sequence($this->asn1Integer($modulus) . $this->asn1Integer($exponent));
+        $modulus             = $this->base64UrlDecode($this->requiredString($jwk, 'n'));
+        $exponent            = $this->base64UrlDecode($this->requiredString($jwk, 'e'));
+        $rsaKey              = $this->asn1Sequence($this->asn1Integer($modulus) . $this->asn1Integer($exponent));
         $algorithmIdentifier = hex2bin('300d06092a864886f70d0101010500');
 
         if ($algorithmIdentifier === false) {
@@ -327,7 +328,7 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
         $value = ltrim($value, "\x00");
         $value = $value === '' ? "\x00" : $value;
 
-        if ((ord($value[0]) & 0x80) !== 0) {
+        if ((\ord($value[0]) & 0x80) !== 0) {
             $value = "\x00" . $value;
         }
 
@@ -342,17 +343,17 @@ final class JwtAccessTokenValidator implements AccessTokenValidatorInterface
     private function asn1Length(int $length): string
     {
         if ($length < 128) {
-            return chr($length);
+            return \chr($length);
         }
 
         $encoded = '';
 
         while ($length > 0) {
-            $encoded = chr($length & 0xff) . $encoded;
+            $encoded = \chr($length & 0xff) . $encoded;
             $length >>= 8;
         }
 
-        return chr(0x80 | \strlen($encoded)) . $encoded;
+        return \chr(0x80 | \strlen($encoded)) . $encoded;
     }
 
     /**

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.UnitTest
  * @subpackage  com_mcp

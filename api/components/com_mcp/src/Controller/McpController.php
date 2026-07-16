@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.Administrator
  * @subpackage  com_mcp
@@ -55,9 +56,9 @@ final class McpController extends BaseController
             return;
         }
 
-        $configuration = $this->app->get('mcp.resourceServerConfiguration');
-        $validator     = $this->app->get('mcp.accessTokenValidator');
-        $contextFactory = $this->app->get('mcp.requestContextFactory');
+        $configuration    = $this->app->get('mcp.resourceServerConfiguration');
+        $validator        = $this->app->get('mcp.accessTokenValidator');
+        $contextFactory   = $this->app->get('mcp.requestContextFactory');
         $metadataProvider = $this->app->get('mcp.protectedResourceMetadataProvider');
         $scopeAuthoriser  = $this->app->get('mcp.scopeAuthoriser');
 

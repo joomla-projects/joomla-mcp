@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     Joomla.UnitTest
  * @subpackage  com_mcp
@@ -46,19 +47,19 @@ final class JwtAccessTokenValidatorTest extends TestCase
         $details = openssl_pkey_get_details($key);
         self::assertIsArray($details);
         $this->publicKey = $details['key'];
-        $this->jwk = [
+        $this->jwk       = [
             'kty' => 'RSA',
             'use' => 'sig',
             'kid' => 'test-key',
             'alg' => 'RS256',
-            'n' => $this->base64UrlEncode($details['rsa']['n']),
-            'e' => $this->base64UrlEncode($details['rsa']['e']),
+            'n'   => $this->base64UrlEncode($details['rsa']['n']),
+            'e'   => $this->base64UrlEncode($details['rsa']['e']),
         ];
     }
 
     public function testValidatesTokenForExpectedResource(): void
     {
-        $resource = 'https://site.example/api/index.php/v1/mcp';
+        $resource  = 'https://site.example/api/index.php/v1/mcp';
         $validator = $this->validator();
         $principal = $validator->validate($this->token($resource), new ResourceIdentifier($resource));
 
