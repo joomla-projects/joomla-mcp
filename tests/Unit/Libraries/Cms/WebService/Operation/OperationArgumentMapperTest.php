@@ -22,6 +22,32 @@ final class OperationArgumentMapperTest extends TestCase
         self::assertSame(['title' => 'Changed title'], $input->body);
     }
 
+    public function testCreateForwardsCustomFieldsWhenAdditionalPropertiesAreAllowed(): void
+    {
+        // The resource allows additional properties, so a custom field the caller supplies must reach the body rather
+        // than being dropped, the way the webservices accept custom fields on write.
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[2];
+        $input     = (new OperationArgumentMapper())->map(
+            $operation,
+            ['title' => 'X', 'catid' => 2, 'my_custom_field' => 'value'],
+        );
+
+        self::assertSame('value', $input->body['my_custom_field']);
+    }
+
+    public function testUpdateForwardsCustomFieldsWithoutMovingThePathIdIntoTheBody(): void
+    {
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[3];
+        $input     = (new OperationArgumentMapper())->map(
+            $operation,
+            ['id' => 7, 'my_custom_field' => 'value'],
+        );
+
+        self::assertSame(['id' => 7], $input->path);
+        self::assertSame('value', $input->body['my_custom_field']);
+        self::assertArrayNotHasKey('id', $input->body);
+    }
+
     public function testPaginationUsesTheJsonApiPageParameterNames(): void
     {
         // Joomla's API controller reads pagination from page[offset] and page[limit], not from filter[] or list[].

@@ -24,15 +24,17 @@ final class OperationArgumentMapper
      */
     public function map(OperationDefinition $operation, array $arguments): OperationInput
     {
-        $path  = [];
-        $query = [];
-        $body  = [];
+        $path     = [];
+        $query    = [];
+        $body     = [];
+        $consumed = [];
 
         foreach ($operation->pathParameters as $transportName => $parameter) {
             $argumentName = $parameter['argument'] ?? $transportName;
 
             if (\array_key_exists($argumentName, $arguments)) {
-                $path[$transportName] = $arguments[$argumentName];
+                $path[$transportName]    = $arguments[$argumentName];
+                $consumed[$argumentName] = true;
             }
         }
 
@@ -45,6 +47,7 @@ final class OperationArgumentMapper
                     $parameter['schema'] ?? [],
                     $argumentName,
                 );
+                $consumed[$argumentName] = true;
             }
         }
 
@@ -54,12 +57,23 @@ final class OperationArgumentMapper
 
         foreach ($operation->requestBodySchema['properties'] ?? [] as $name => $schema) {
             if (\array_key_exists($name, $arguments)) {
-                $body[$name] = $this->transportValue($arguments[$name], $schema, $name);
+                $body[$name]     = $this->transportValue($arguments[$name], $schema, $name);
+                $consumed[$name] = true;
                 continue;
             }
 
             if ($applyDefaults && \array_key_exists('default', $schema)) {
                 $body[$name] = $schema['default'];
+            }
+        }
+
+        // When the resource allows additional properties, forward the ones the caller supplied that no declared
+        // parameter consumed, so custom fields reach the model the way the webservices accept them.
+        if (($operation->requestBodySchema['additionalProperties'] ?? false) === true) {
+            foreach ($arguments as $name => $value) {
+                if (!isset($consumed[$name])) {
+                    $body[$name] = $value;
+                }
             }
         }
 
