@@ -239,6 +239,7 @@ class McpEndpoint
                     "name"        => $resource->getName(),
                     "title"       => $resource->getTitle(),
                     "description" => $resource->getDescription(),
+                    'mimeType'    => $resource->getMimeType(),
                 ];
             }
 
