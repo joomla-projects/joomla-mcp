@@ -22,6 +22,21 @@ final class OperationArgumentMapperTest extends TestCase
         self::assertSame(['title' => 'Changed title'], $input->body);
     }
 
+    public function testPaginationUsesTheJsonApiPageParameterNames(): void
+    {
+        // Joomla's API controller reads pagination from page[offset] and page[limit], not from filter[] or list[].
+        $operation = (new OperationCompiler())->compile(ArticlesController::class)[0];
+        $input     = (new OperationArgumentMapper())->map(
+            $operation,
+            ['limit' => 50, 'offset' => 20],
+        );
+
+        self::assertSame(
+            ['page[limit]' => 50, 'page[offset]' => 20],
+            $input->query,
+        );
+    }
+
     public function testCreateFillsOmittedFieldsWithTheirDefaults(): void
     {
         // A create behaves like the administrator form: the body is optional and omitted fields fall back to their

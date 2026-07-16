@@ -218,14 +218,23 @@ final class OperationCompiler
         $parameters = [];
 
         foreach ($querySchema['properties'] ?? [] as $name => $schema) {
-            $parameterName = \in_array($name, ['ordering', 'direction'], true)
-                ? \sprintf('list[%s]', $name)
-                : \sprintf('filter[%s]', $name);
-
-            $parameters[$parameterName] = $this->parameter($name, $schema);
+            $parameters[$this->queryParameterName($name)] = $this->parameter($name, $schema);
         }
 
         return $parameters;
+    }
+
+    /**
+     * Routes a query field to Joomla's established query-string group: ordering and direction to list[], offset and
+     * limit to the JSON:API page[] group the API controller reads, and everything else to filter[].
+     */
+    private function queryParameterName(string $name): string
+    {
+        return match (true) {
+            \in_array($name, ['ordering', 'direction'], true) => \sprintf('list[%s]', $name),
+            \in_array($name, ['limit', 'offset'], true)       => \sprintf('page[%s]', $name),
+            default                                           => \sprintf('filter[%s]', $name),
+        };
     }
 
     /**
