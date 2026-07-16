@@ -23,7 +23,7 @@ use Joomla\CMS\Mcp\Tool\ToolInterface;
 use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
 
 /**
- * Registry for MCP tools
+ * Registry for MCP abilities (tools, resources, resource templates and prompts)
  *
  * @since  __DEPLOY_VERSION__
  */
@@ -44,14 +44,14 @@ class AbilityRegistry
     protected array $resources = [];
 
     /**
-     * @var ResourceTemplateInterface[] Registered resources
+     * @var ResourceTemplateInterface[] Registered resource templates
      *
      * @since  __DEPLOY_VERSION__
      */
     protected array $resourceTemplates = [];
 
     /**
-     * @var PromptInterface[] Registered resources
+     * @var PromptInterface[] Registered prompts
      *
      * @since  __DEPLOY_VERSION__
      */
@@ -138,7 +138,7 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resourceTemplates
+     * Get all registered resource templates
      *
      * @return ResourceTemplateInterface[]
      *
@@ -167,7 +167,7 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resourceTemplates
+     * Get all registered prompts
      *
      * @return PromptInterface[]
      *

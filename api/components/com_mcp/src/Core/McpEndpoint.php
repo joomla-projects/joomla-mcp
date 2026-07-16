@@ -60,7 +60,7 @@ class McpEndpoint
     /**
      * Constructor.
      *
-     * @param AbilityRegistry $abilityRegistry Tool registry
+     * @param AbilityRegistry $abilityRegistry Ability registry
      * @param array           $config          Configuration. Possible keys:
      *                        - logger: Logger instance, defaults to NullLogger
      *                        - server_name: Server name, defaults to 'Joomla MCP Server'
@@ -192,7 +192,7 @@ class McpEndpoint
      * Register MCP handlers
      *
      * @param Server          $server          Server instance
-     * @param AbilityRegistry $abilityRegistry Tool registry
+     * @param AbilityRegistry $abilityRegistry Ability registry
      *
      * @return  void
      *
