@@ -16,7 +16,10 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Mcp\Resource\ResourceInterface;
 use Joomla\CMS\Mcp\Resource\ResourceResult;
+use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
+use Joomla\CMS\Mcp\Tool\ToolInterface;
 use Joomla\CMS\Mcp\Tool\ToolResult;
 use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\CMS\User\User;
@@ -199,20 +202,7 @@ class McpEndpoint
     {
         // Register tool/list handler
         $server->registerHandler('tools/list', function () use ($abilityRegistry) {
-            $tools = [];
-
-            foreach ($abilityRegistry->getTools() as $tool) {
-                $schema = $tool->getSchema();
-
-                $toolDefinition = [
-                    'name' => $tool->getName(),
-                    ...$schema,  // Spread the entire schema (description, inputSchema, annotations)
-                ];
-
-                $tools[] = $toolDefinition;
-            }
-
-            return ListToolsResult::fromResponseData(['tools' => $tools]);
+            return $this->toListToolsResult($abilityRegistry->getTools());
         });
 
         // Register tool/call handler
@@ -231,21 +221,8 @@ class McpEndpoint
 
         // Register resources/list handler
         $server->registerHandler('resources/list', function () use ($abilityRegistry) {
-            $resources = [];
-
-            foreach ($abilityRegistry->getResources() as $resource) {
-                $resources[] = [
-                    "uri"         => $resource->getUri(),
-                    "name"        => $resource->getName(),
-                    "title"       => $resource->getTitle(),
-                    "description" => $resource->getDescription(),
-                    'mimeType'    => $resource->getMimeType(),
-                ];
-            }
-
-            return ListResourcesResult::fromResponseData(['resources' => $resources]);
+            return $this->toListResourcesResult($abilityRegistry->getResources());
         });
-
 
         // Register resources/read handler
         $server->registerHandler('resources/read', function ($params) use ($server, $abilityRegistry) {
@@ -261,20 +238,84 @@ class McpEndpoint
 
         // Register resources/templates/list handler
         $server->registerHandler('resources/templates/list', function () use ($abilityRegistry) {
-            $templates = [];
-
-            foreach ($abilityRegistry->getResourceTemplates() as $template) {
-                $templates[] = [
-                    'name'        => $template->getName(),
-                    'uriTemplate' => $template->getUriTemplate(),
-                    'title'       => $template->getTitle(),
-                    'description' => $template->getDescription(),
-                    'mimeType'    => $template->getMimeType(),
-                ];
-            }
-
-            return ListResourceTemplatesResult::fromResponseData(['resourceTemplates' => $templates]);
+            return $this->toListResourceTemplatesResult($abilityRegistry->getResourceTemplates());
         });
+    }
+
+    /**
+     * Convert registered tools to the SDK wire format
+     *
+     * @param ToolInterface[] $tools The registered tools
+     *
+     * @return  ListToolsResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListToolsResult(array $tools): ListToolsResult
+    {
+        $definitions = [];
+
+        foreach ($tools as $tool) {
+            $definitions[] = [
+                'name' => $tool->getName(),
+                // Spread the entire schema (description, inputSchema, annotations)
+                ...$tool->getSchema(),
+            ];
+        }
+
+        return ListToolsResult::fromResponseData(['tools' => $definitions]);
+    }
+
+    /**
+     * Convert registered resources to the SDK wire format
+     *
+     * @param ResourceInterface[] $resources The registered resources
+     *
+     * @return  ListResourcesResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListResourcesResult(array $resources): ListResourcesResult
+    {
+        $definitions = [];
+
+        foreach ($resources as $resource) {
+            $definitions[] = [
+                'uri'         => $resource->getUri(),
+                'name'        => $resource->getName(),
+                'title'       => $resource->getTitle(),
+                'description' => $resource->getDescription(),
+                'mimeType'    => $resource->getMimeType(),
+            ];
+        }
+
+        return ListResourcesResult::fromResponseData(['resources' => $definitions]);
+    }
+
+    /**
+     * Convert registered resource templates to the SDK wire format
+     *
+     * @param ResourceTemplateInterface[] $templates The registered resource templates
+     *
+     * @return  ListResourceTemplatesResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListResourceTemplatesResult(array $templates): ListResourceTemplatesResult
+    {
+        $definitions = [];
+
+        foreach ($templates as $template) {
+            $definitions[] = [
+                'name'        => $template->getName(),
+                'uriTemplate' => $template->getUriTemplate(),
+                'title'       => $template->getTitle(),
+                'description' => $template->getDescription(),
+                'mimeType'    => $template->getMimeType(),
+            ];
+        }
+
+        return ListResourceTemplatesResult::fromResponseData(['resourceTemplates' => $definitions]);
     }
 
     /**
