@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @package         Joomla.MCP
+ * @subpackage      com_mcp
+ *
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+declare(strict_types=1);
+
+namespace Joomla\Component\MCP\Api\Exception;
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
+
+
+
+/**
+ * Thrown when a requested MCP ability (tool, resource, resource template
+ * or prompt) is not registered.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+class AbilityNotFoundException extends \InvalidArgumentException
+{
+    /**
+     * Constructor.
+     *
+     * @param string $message  The exception message
+     * @param int    $code     The exception code, defaults to 404
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(string $message, int $code = 404)
+    {
+        parent::__construct($message, $code);
+    }
+}

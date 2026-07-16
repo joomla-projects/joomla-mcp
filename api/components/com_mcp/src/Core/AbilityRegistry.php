@@ -20,6 +20,7 @@ use Joomla\CMS\Mcp\Prompt\PromptInterface;
 use Joomla\CMS\Mcp\Resource\ResourceInterface;
 use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
 use Joomla\CMS\Mcp\Tool\ToolInterface;
+use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
 
 /**
  * Registry for MCP tools
@@ -91,15 +92,20 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered tools
+     * Get a registered tool by name
+     *
+     * @param string $name  The tool name
      *
      * @return ToolInterface
      *
+     * @throws AbilityNotFoundException  If no tool is registered under the given name
+     *
      * @since  __DEPLOY_VERSION__
      */
-    public function getTool($name): ToolInterface
+    public function getTool(string $name): ToolInterface
     {
-        return $this->tools[$name];
+        return $this->tools[$name]
+            ?? throw new AbilityNotFoundException('Tool not found: ' . $name);
     }
 
     /**
@@ -115,15 +121,20 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered resource by URI
+     *
+     * @param string $uri  The resource URI
      *
      * @return ResourceInterface
      *
+     * @throws AbilityNotFoundException  If no resource is registered under the given URI
+     *
      * @since  __DEPLOY_VERSION__
      */
-    public function getResource($uri): ResourceInterface
+    public function getResource(string $uri): ResourceInterface
     {
-        return $this->resources[$uri];
+        return $this->resources[$uri]
+            ?? throw new AbilityNotFoundException('Resource not found: ' . $uri);
     }
 
     /**
@@ -139,15 +150,20 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered resource template by name
+     *
+     * @param string $name  The resource template name
      *
      * @return ResourceTemplateInterface
      *
+     * @throws AbilityNotFoundException  If no resource template is registered under the given name
+     *
      * @since  __DEPLOY_VERSION__
      */
-    public function getResourceTemplate($name): ResourceTemplateInterface
+    public function getResourceTemplate(string $name): ResourceTemplateInterface
     {
-        return $this->resourceTemplates[$name];
+        return $this->resourceTemplates[$name]
+            ?? throw new AbilityNotFoundException('Resource template not found: ' . $name);
     }
 
     /**
@@ -163,14 +179,19 @@ class AbilityRegistry
     }
 
     /**
-     * Get all registered resources
+     * Get a registered prompt by name
+     *
+     * @param string $name  The prompt name
      *
      * @return PromptInterface
      *
+     * @throws AbilityNotFoundException  If no prompt is registered under the given name
+     *
      * @since  __DEPLOY_VERSION__
      */
-    public function getPrompt($name): PromptInterface
+    public function getPrompt(string $name): PromptInterface
     {
-        return $this->prompts[$name];
+        return $this->prompts[$name]
+            ?? throw new AbilityNotFoundException('Prompt not found: ' . $name);
     }
 }

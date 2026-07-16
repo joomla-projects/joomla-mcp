@@ -21,10 +21,12 @@ use Joomla\CMS\Mcp\Tool\ToolResult;
 use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
+use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Stream;
 use Mcp\Server\HttpServerRunner;
+use Mcp\Server\McpServerException;
 use Mcp\Server\Server;
 use Mcp\Server\Transport\Http\BufferedIo;
 use Mcp\Server\Transport\Http\FileSessionStore;
@@ -134,7 +136,7 @@ class McpEndpoint
             );
 
             // The SDK would normally write status, headers and body directly to PHP's
-            // output (header(), echo). BufferedIo captures those writes in memory so
+            // output (header(), echo). BufferedIo captures the writes in memory so
             // we can return a proper response object to the controller instead.
             $io = new BufferedIo();
 
@@ -215,10 +217,10 @@ class McpEndpoint
             $toolName  = $params->name;
             $arguments = $params->arguments;
 
-            $tool = $abilityRegistry->getTool($toolName);
-
-            if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName, 404);
+            try {
+                $tool = $abilityRegistry->getTool($toolName);
+            } catch (AbilityNotFoundException) {
+                throw McpServerException::unknownTool($toolName);
             }
 
             return $this->toCallToolResult($tool->execute($arguments));
@@ -242,11 +244,12 @@ class McpEndpoint
 
 
         // Register resources/read handler
-        $server->registerHandler('resources/read', function ($params) use ($abilityRegistry) {
-            $resource = $abilityRegistry->getResource($params->uri);
-
-            if (!$resource) {
-                throw new \InvalidArgumentException('Resource not found: ' . $params->uri, 404);
+        $server->registerHandler('resources/read', function ($params) use ($server, $abilityRegistry) {
+            try {
+                $resource = $abilityRegistry->getResource($params->uri);
+            } catch (AbilityNotFoundException) {
+                $modern = $server->getSession()?->clientSupportsFeature('resource_not_found_invalid_params') ?? false;
+                throw McpServerException::unknownResource($params->uri, $modern);
             }
 
             return $this->toReadResourceResult($resource->read());
@@ -312,7 +315,7 @@ class McpEndpoint
         }
 
         /**
-         * Apache specific fix: mod_php does not expose the Authorization header in the
+         * Apache-specific fix: mod_php does not expose the Authorization header in the
          * environment, only via apache_request_headers().
          * See https://github.com/symfony/symfony/issues/19693 and the same handling in
          * plg_api-authentication_token.
@@ -321,14 +324,14 @@ class McpEndpoint
             empty($authHeader) && \PHP_SAPI === 'apache2handler'
             && \function_exists('apache_request_headers') && apache_request_headers() !== false
         ) {
-            $apacheHeaders = array_change_key_case(apache_request_headers(), CASE_LOWER);
+            $apacheHeaders = array_change_key_case(apache_request_headers());
 
             if (\array_key_exists('authorization', $apacheHeaders)) {
                 $authHeader = $apacheHeaders['authorization'];
             }
         }
 
-        // Another Apache specific fix (mod_rewrite/CGI setups pass the header only as
+        // Another Apache-specific fix (mod_rewrite/CGI setups pass the header only as
         // REDIRECT_HTTP_AUTHORIZATION). See https://github.com/symfony/symfony/issues/1813
         if (empty($authHeader)) {
             $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
@@ -345,7 +348,7 @@ class McpEndpoint
     }
 
     /**
-     * Create unauthorized response
+     * Create an unauthorized response
      *
      * @param string $message Error message
      *
