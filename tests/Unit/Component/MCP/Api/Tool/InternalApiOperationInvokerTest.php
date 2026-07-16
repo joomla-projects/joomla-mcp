@@ -74,4 +74,52 @@ final class InternalApiOperationInvokerTest extends TestCase
         self::assertSame(['catid' => 7], $dispatcher->input?->body);
         self::assertSame(['title' => 'Changed', 'id' => 42], $result->body);
     }
+
+    public function testItPassesAnErrorBodyThroughUntouched(): void
+    {
+        // A conflict response also has a data block, but it carries a message rather than a JSON:API resource.
+        // Flattening it to its (missing) attributes would drop the message and leave the client with nothing.
+        $operation = new OperationDefinition(
+            operationId: 'content.articles.delete',
+            method: 'DELETE',
+            path: 'v1/content/articles/:id',
+            controller: 'articles',
+            task: 'delete',
+            title: 'Delete article',
+            description: 'Deletes an article.',
+            inputSchema: ['type' => 'object'],
+            outputSchema: null,
+            pathParameters: ['id' => ['argument' => 'id', 'schema' => ['type' => 'integer']]],
+            acl: ['component' => 'com_content'],
+        );
+
+        $conflict = [
+            'success' => true,
+            'data'    => [
+                'status'  => 'Conflict',
+                'code'    => 409,
+                'message' => 'Resource not in state that can be deleted, must be trashed before it can be deleted',
+            ],
+        ];
+
+        $dispatcher = new class ($conflict) implements InternalApiDispatcherInterface {
+            /**
+             * @param array<string, mixed> $conflict
+             */
+            public function __construct(private readonly array $conflict)
+            {
+            }
+
+            public function dispatch(OperationDefinition $operation, OperationInput $input): InternalApiResponse
+            {
+                return new InternalApiResponse(409, $this->conflict);
+            }
+        };
+
+        $invoker = new InternalApiOperationInvoker(new OperationArgumentMapper(), $dispatcher);
+        $result  = $invoker->invoke($operation, ['id' => 1]);
+
+        self::assertFalse($result->isSuccessful());
+        self::assertSame($conflict, $result->body);
+    }
 }

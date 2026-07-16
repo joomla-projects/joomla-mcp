@@ -39,9 +39,13 @@ final class InternalApiOperationInvoker implements OperationInvokerInterface
             $this->argumentMapper->map($operation, $arguments),
         );
 
+        $isSuccess = $response->statusCode >= 200 && $response->statusCode < 300;
+
         return new OperationResult(
             $response->statusCode,
-            $this->normaliseResponseBody($response->body),
+            // Only a successful response carries a JSON:API resource to flatten. An error response carries an error
+            // body whose message must survive verbatim, so it is passed through untouched.
+            $isSuccess ? $this->normaliseResponseBody($response->body) : $response->body,
             $response->mediaType,
         );
     }
