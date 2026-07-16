@@ -31,6 +31,15 @@ use League\OAuth2\Server\Exception\OAuthServerException;
 final class JCraftsOAuth2AuthService implements AuthServiceInterface
 {
     /**
+     * Whether com_jcraftsoauth2server and its bundled vendor tree are available.
+     *
+     * @var bool
+     *
+     * @since __DEPLOY_VERSION__
+     */
+    private readonly bool $available;
+
+    /**
      * Constructor.
      *
      * @param DatabaseInterface     $db          Database connector
@@ -45,7 +54,16 @@ final class JCraftsOAuth2AuthService implements AuthServiceInterface
         // com_jcraftsoauth2server bundles its own League OAuth2 Server vendor tree, which is not
         // registered as a Joomla PSR-4 library — load it here so OAuth2ServerFactory and the League
         // classes below are available, without requiring callers to know this implementation detail.
-        require_once JPATH_LIBRARIES . '/oauth2server4jcrafts/src/vendor/autoload.php';
+        // The extension is optional, so guard against it not being installed: this class must not
+        // fatal (via a missing require_once target) on sites that don't run com_jcraftsoauth2server,
+        // since ChainAuthService needs to be able to fall through to the next auth service.
+        $autoloader = JPATH_LIBRARIES . '/oauth2server4jcrafts/src/vendor/autoload.php';
+
+        $this->available = ComponentHelper::isEnabled('com_jcraftsoauth2server') && is_file($autoloader);
+
+        if ($this->available) {
+            require_once $autoloader;
+        }
     }
 
     /**
@@ -56,7 +74,7 @@ final class JCraftsOAuth2AuthService implements AuthServiceInterface
      */
     public function validateToken(?string $token): ?TokenInfo
     {
-        if ($token === null || $token === '') {
+        if (!$this->available || $token === null || $token === '') {
             return null;
         }
 
