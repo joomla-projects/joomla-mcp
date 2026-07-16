@@ -16,6 +16,7 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
@@ -110,7 +111,9 @@ class McpEndpoint
             }
 
             $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userid);
-            $this->setCurrentUser(new User($tokenInfo->userid));
+            $user = new User($tokenInfo->userid);
+            $this->setCurrentUser($user);
+            Factory::getApplication()->loadIdentity($user);
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
