@@ -122,4 +122,98 @@ final class InternalApiOperationInvokerTest extends TestCase
         self::assertFalse($result->isSuccessful());
         self::assertSame($conflict, $result->body);
     }
+
+    public function testItConvertsDateTimeOutputToRfc3339(): void
+    {
+        // Joomla stores and returns dates as Y-m-d H:i:s; the schema declares date-time, so the read output is
+        // converted to RFC 3339 to match, symmetrically to the argument conversion on the way in.
+        $operation = new OperationDefinition(
+            operationId: 'content.articles.get',
+            method: 'GET',
+            path: 'v1/content/articles/:id',
+            controller: 'articles',
+            task: 'displayItem',
+            title: 'Get article',
+            description: 'Returns an article.',
+            inputSchema: ['type' => 'object'],
+            outputSchema: [
+                'type'       => 'object',
+                'properties' => [
+                    'created'      => ['type' => 'string', 'format' => 'date-time'],
+                    'publish_up'   => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                    'publish_down' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                    'title'        => ['type' => 'string'],
+                ],
+            ],
+            pathParameters: ['id' => ['argument' => 'id', 'schema' => ['type' => 'integer']]],
+            acl: ['component' => 'com_content'],
+        );
+
+        $dispatcher = new class () implements InternalApiDispatcherInterface {
+            public function dispatch(OperationDefinition $operation, OperationInput $input): InternalApiResponse
+            {
+                return new InternalApiResponse(200, [
+                    'data' => [
+                        'id'         => '3',
+                        'attributes' => [
+                            'created'      => '2025-05-30 12:00:00',
+                            'publish_up'   => null,
+                            'publish_down' => '0000-00-00 00:00:00',
+                            'title'        => 'Unchanged 2025-05-30 12:00:00',
+                        ],
+                    ],
+                ]);
+            }
+        };
+
+        $invoker = new InternalApiOperationInvoker(new OperationArgumentMapper(), $dispatcher);
+        $body    = $invoker->invoke($operation, ['id' => 3])->body;
+
+        self::assertSame('2025-05-30T12:00:00+00:00', $body['created']);
+        self::assertNull($body['publish_up']);
+        // Joomla's zero-date sentinel becomes a clean null rather than a bogus date.
+        self::assertNull($body['publish_down']);
+        // A non-date field that merely contains a date-like substring is left untouched.
+        self::assertSame('Unchanged 2025-05-30 12:00:00', $body['title']);
+    }
+
+    public function testItConvertsDateTimeInEveryRowOfACollection(): void
+    {
+        $operation = new OperationDefinition(
+            operationId: 'content.articles.list',
+            method: 'GET',
+            path: 'v1/content/articles',
+            controller: 'articles',
+            task: 'displayList',
+            title: 'List articles',
+            description: 'Lists articles.',
+            inputSchema: ['type' => 'object'],
+            outputSchema: [
+                'type'  => 'array',
+                'items' => [
+                    'type'       => 'object',
+                    'properties' => ['created' => ['type' => 'string', 'format' => 'date-time']],
+                ],
+            ],
+            acl: ['component' => 'com_content'],
+        );
+
+        $dispatcher = new class () implements InternalApiDispatcherInterface {
+            public function dispatch(OperationDefinition $operation, OperationInput $input): InternalApiResponse
+            {
+                return new InternalApiResponse(200, [
+                    'data' => [
+                        ['id' => '1', 'attributes' => ['created' => '2025-01-07 08:15:00']],
+                        ['id' => '2', 'attributes' => ['created' => '2025-02-03 10:05:00']],
+                    ],
+                ]);
+            }
+        };
+
+        $invoker = new InternalApiOperationInvoker(new OperationArgumentMapper(), $dispatcher);
+        $body    = $invoker->invoke($operation, [])->body;
+
+        self::assertSame('2025-01-07T08:15:00+00:00', $body[0]['created']);
+        self::assertSame('2025-02-03T10:05:00+00:00', $body[1]['created']);
+    }
 }
