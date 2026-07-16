@@ -15,24 +15,17 @@ namespace Joomla\Component\MCP\Api\Tool;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\WebService\Operation\OperationDefinition;
-use Joomla\Component\MCP\Api\Core\McpRequestContext;
-
 /**
- * Executes a canonical operation for a generic MCP tool.
+ * Ability that declares its required OAuth scopes.
  *
  * @since  __DEPLOY_VERSION__
  */
-interface OperationInvokerInterface
+interface ScopedAbilityInterface
 {
     /**
-     * @param  array<string, mixed>  $arguments  Operation arguments.
+     * @return  list<string>
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function invoke(
-        OperationDefinition $operation,
-        array $arguments,
-        McpRequestContext $context,
-    ): OperationResult;
+    public function getRequiredScopes(): array;
 }

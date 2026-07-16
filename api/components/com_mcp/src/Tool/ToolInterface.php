@@ -1,11 +1,10 @@
 <?php
-
 /**
- * @package         Joomla.MCP
- * @subpackage      com_mcp
+ * @package     Joomla.Administrator
+ * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 declare(strict_types=1);
@@ -16,41 +15,38 @@ namespace Joomla\Component\MCP\Api\Tool;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\Component\MCP\Api\Core\McpRequestContext;
 use Mcp\Types\CallToolResult;
 
 /**
- * Interface for all MCP tools
+ * Interface for MCP tools executed under an authenticated request context.
  *
  * @since  __DEPLOY_VERSION__
  */
 interface ToolInterface
 {
     /**
-     * Get the tool name
-     *
-     * @return string
+     * Returns the tool name.
      *
      * @since  __DEPLOY_VERSION__
      */
     public function getName(): string;
 
     /**
-     * Get the tool schema (JSON Schema format)
+     * Returns the MCP tool schema.
      *
-     * @return array
+     * @return  array<string, mixed>
      *
      * @since  __DEPLOY_VERSION__
      */
     public function getSchema(): array;
 
     /**
-     * Execute the tool with the given parameters
+     * Executes the tool under the authenticated MCP request context.
      *
-     * @param array $params  The tool parameters
-     *
-     * @return CallToolResult  The tool result
+     * @param  array<string, mixed>  $params  Tool arguments.
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function execute(array $params): CallToolResult;
+    public function execute(array $params, McpRequestContext $context): CallToolResult;
 }

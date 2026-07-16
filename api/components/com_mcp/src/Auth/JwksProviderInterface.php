@@ -9,30 +9,27 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Api\Tool;
+namespace Joomla\Component\MCP\Api\Auth;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\WebService\Operation\OperationDefinition;
-use Joomla\Component\MCP\Api\Core\McpRequestContext;
-
 /**
- * Executes a canonical operation for a generic MCP tool.
+ * Provides JSON Web Keys used to validate access-token signatures.
  *
  * @since  __DEPLOY_VERSION__
  */
-interface OperationInvokerInterface
+interface JwksProviderInterface
 {
     /**
-     * @param  array<string, mixed>  $arguments  Operation arguments.
+     * Returns a JSON Web Key for the requested key identifier.
+     *
+     * @return  array<string, mixed>
+     *
+     * @throws  \RuntimeException
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function invoke(
-        OperationDefinition $operation,
-        array $arguments,
-        McpRequestContext $context,
-    ): OperationResult;
+    public function getKey(?string $keyId): array;
 }

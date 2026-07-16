@@ -1,34 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
-	<help key="MCP:_Options"/>
-	<inlinehelp button="show"/>
-	<fieldset name="basic" label="COM_MCP_FIELDSET_BASIC">
-		<field
-			name="enabled"
-			type="radio"
-			label="COM_MCP_ENABLED_LABEL"
-			description="COM_MCP_ENABLED_DESC"
-			default="0"
-			class="btn-group btn-group-yesno"
-			>
-			<option value="0">JNO</option>
-			<option value="1">JYES</option>
-		</field>
-	</fieldset>
+    <fieldset name="basic" label="COM_MCP_FIELDSET_BASIC">
+        <field
+            name="enabled"
+            type="radio"
+            label="COM_MCP_ENABLED_LABEL"
+            description="COM_MCP_ENABLED_DESC"
+            default="0"
+            layout="joomla.form.field.radio.switcher"
+            validate="options"
+            >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+    </fieldset>
 
-	<fieldset name="permissions"
-			  label="JCONFIG_PERMISSIONS_LABEL"
-	>
+    <fieldset name="oauth_resource_server" label="COM_MCP_FIELDSET_OAUTH_RESOURCE_SERVER">
+        <field
+            name="oauth_resource_uri"
+            type="url"
+            label="COM_MCP_OAUTH_RESOURCE_URI_LABEL"
+            description="COM_MCP_OAUTH_RESOURCE_URI_DESC"
+            required="true"
+            filter="url"
+        />
 
-		<field
-			name="rules"
-			type="rules"
-			label="JCONFIG_PERMISSIONS_LABEL"
-			filter="rules"
-			validate="rules"
-			component="com_mcp"
-			section="component"
-		/>
+        <field
+            name="oauth_issuer"
+            type="url"
+            label="COM_MCP_OAUTH_ISSUER_LABEL"
+            description="COM_MCP_OAUTH_ISSUER_DESC"
+            required="true"
+            filter="url"
+        />
 
-	</fieldset>
+        <field
+            name="oauth_jwks_uri"
+            type="url"
+            label="COM_MCP_OAUTH_JWKS_URI_LABEL"
+            description="COM_MCP_OAUTH_JWKS_URI_DESC"
+            required="true"
+            filter="url"
+        />
+
+        <field
+            name="oauth_resource_metadata_uri"
+            type="url"
+            label="COM_MCP_OAUTH_METADATA_URI_LABEL"
+            description="COM_MCP_OAUTH_METADATA_URI_DESC"
+            filter="url"
+        />
+
+        <field
+            name="oauth_resource_documentation_uri"
+            type="url"
+            label="COM_MCP_OAUTH_DOCUMENTATION_URI_LABEL"
+            description="COM_MCP_OAUTH_DOCUMENTATION_URI_DESC"
+            filter="url"
+        />
+
+        <field
+            name="oauth_base_scope"
+            type="text"
+            label="COM_MCP_OAUTH_BASE_SCOPE_LABEL"
+            description="COM_MCP_OAUTH_BASE_SCOPE_DESC"
+            default="mcp:use"
+            required="true"
+            filter="string"
+        />
+
+        <field
+            name="oauth_allowed_algorithms"
+            type="text"
+            label="COM_MCP_OAUTH_ALLOWED_ALGORITHMS_LABEL"
+            description="COM_MCP_OAUTH_ALLOWED_ALGORITHMS_DESC"
+            default="RS256"
+            required="true"
+        />
+
+        <field
+            name="oauth_allowed_token_types"
+            type="text"
+            label="COM_MCP_OAUTH_ALLOWED_TYPES_LABEL"
+            description="COM_MCP_OAUTH_ALLOWED_TYPES_DESC"
+            default="at+jwt"
+            required="true"
+        />
+
+        <field
+            name="oauth_clock_skew"
+            type="number"
+            label="COM_MCP_OAUTH_CLOCK_SKEW_LABEL"
+            description="COM_MCP_OAUTH_CLOCK_SKEW_DESC"
+            default="60"
+            min="0"
+            max="300"
+            step="1"
+        />
+
+        <field
+            name="oauth_jwks_cache_lifetime"
+            type="number"
+            label="COM_MCP_OAUTH_JWKS_CACHE_LABEL"
+            description="COM_MCP_OAUTH_JWKS_CACHE_DESC"
+            default="3600"
+            min="60"
+            step="60"
+        />
+    </fieldset>
+
+    <fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL" description="JCONFIG_PERMISSIONS_DESC">
+        <field
+            name="rules"
+            type="rules"
+            label="JCONFIG_PERMISSIONS_LABEL"
+            validate="rules"
+            filter="rules"
+            component="com_mcp"
+            section="component"
+        />
+    </fieldset>
 </config>

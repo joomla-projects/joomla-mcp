@@ -1,19 +1,25 @@
 <?php
-
 /**
- * @package     Joomla.Platform
- * @subpackage  WebService
+ * @package     Joomla.Libraries
+ * @subpackage  WebService.Internal
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace Joomla\CMS\WebService\Internal;
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\Exception\ResourceNotFound;
+use Joomla\CMS\User\User;
 use Joomla\CMS\WebService\Operation\OperationDefinition;
 use Joomla\CMS\WebService\Operation\OperationInput;
 use Tobscure\JsonApi\Exception\InvalidParameterException;
@@ -29,12 +35,21 @@ use Tobscure\JsonApi\Exception\InvalidParameterException;
  */
 final class ComponentApiDispatcher implements InternalApiDispatcherInterface
 {
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     public function __construct(private readonly CMSApplication $application)
     {
     }
 
-    public function dispatch(OperationDefinition $operation, OperationInput $input): InternalApiResponse
-    {
+    /**
+     * @inheritDoc
+     */
+    public function dispatch(
+        OperationDefinition $operation,
+        OperationInput $input,
+        User $identity,
+    ): InternalApiResponse {
         $parent = $this->application;
 
         if (!$parent->isClient('api')) {
@@ -63,11 +78,12 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         $source['format']     = 'jsonapi';
 
         $requestInput = new InternalApiInput($source, $input->body, $query, $operation->method);
-        $application  = new InternalApiApplication($parent, $requestInput);
+        $application  = new InternalApiApplication($parent, $requestInput, $identity);
         $factoryState = $this->replaceFactoryState($application);
         $outputLevel  = ob_get_level();
+        $exception    = null;
+
         ob_start();
-        $exception = null;
 
         try {
             $extension  = $application->bootComponent($component);
@@ -95,16 +111,18 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     }
 
     /**
-     * @param array<string, mixed> $parameters
+     * @param  array<string, mixed>  $parameters  Flat query parameters.
      *
-     * @return array<string, mixed>
+     * @return  array<string, mixed>
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function expandQueryParameters(array $parameters): array
     {
         $query = [];
 
         foreach ($parameters as $name => $value) {
-            if (preg_match('/^([^\[]+)((?:\[[^\]]+\])+)$/', $name, $matches) !== 1) {
+            if (preg_match('/^([^\[]+)((?:\[[^\]]+\])+)$/' , $name, $matches) !== 1) {
                 $query[$name] = $value;
                 continue;
             }
@@ -129,7 +147,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     }
 
     /**
-     * @return array{application: mixed, document: mixed}
+     * @return  array{application: mixed, document: mixed}
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function replaceFactoryState(InternalApiApplication $application): array
     {
@@ -145,7 +165,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     }
 
     /**
-     * @param array{application: mixed, document: mixed} $state
+     * @param  array{application: mixed, document: mixed}  $state  Previous factory state.
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function restoreFactoryState(array $state): void
     {
@@ -153,6 +175,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         self::writeFactoryProperty('document', $state['document']);
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private static function readFactoryProperty(string $name): mixed
     {
         if (!property_exists(Factory::class, $name)) {
@@ -162,6 +187,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         return (new \ReflectionProperty(Factory::class, $name))->getValue();
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private static function writeFactoryProperty(string $name, mixed $value): void
     {
         if (!property_exists(Factory::class, $name)) {
@@ -171,19 +199,24 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         (new \ReflectionProperty(Factory::class, $name))->setValue(null, $value);
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function cleanOutputBuffer(int $startingLevel): string
     {
         $output = '';
 
         while (ob_get_level() > $startingLevel) {
-            $output = (string)ob_get_clean() . $output;
+            $output = (string) ob_get_clean() . $output;
         }
 
         return trim($output);
     }
 
     /**
-     * @return array<string, list<string>>
+     * @return  array<string, list<string>>
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function normaliseHeaders(InternalApiApplication $application): array
     {
@@ -201,14 +234,16 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
                 continue;
             }
 
-            $normalised[$name][] = (string)$value;
+            $normalised[$name][] = (string) $value;
         }
 
         return $normalised;
     }
 
     /**
-     * @param array<string, list<string>> $headers
+     * @param  array<string, list<string>>  $headers  Response headers.
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function statusCode(array $headers, int $default): int
     {
@@ -218,7 +253,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
             }
 
             if (preg_match('/\d{3}/', $values[array_key_last($values)], $matches) === 1) {
-                return (int)$matches[0];
+                return (int) $matches[0];
             }
         }
 
@@ -226,7 +261,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
     }
 
     /**
-     * @param array<string, list<string>> $headers
+     * @param  array<string, list<string>>  $headers  Response headers.
+     *
+     * @since  __DEPLOY_VERSION__
      */
     private function mediaType(array $headers): string
     {
@@ -241,6 +278,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         return 'application/vnd.api+json';
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function responseBody(InternalApiApplication $application, string $output, int $statusCode): mixed
     {
         if ($output !== '') {
@@ -259,11 +299,14 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
             return $body === [] ? null : $body;
         }
 
-        $rendered = (string)$document;
+        $rendered = (string) $document;
 
         return $rendered === '' ? null : $this->decodeJson($rendered);
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function decodeJson(string $body): mixed
     {
         try {
@@ -273,10 +316,13 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         }
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function exceptionResponse(\Throwable $exception, CMSApplication $parent): InternalApiResponse
     {
         $status = $this->exceptionStatus($exception);
-        $detail = $status >= 500 && !(bool)$parent->get('debug')
+        $detail = $status >= 500 && !(bool) $parent->get('debug')
             ? 'The internal Joomla API request failed.'
             : $exception->getMessage();
 
@@ -285,7 +331,7 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
             [
                 'errors' => [
                     [
-                        'status' => (string)$status,
+                        'status' => (string) $status,
                         'title'  => $this->statusTitle($status),
                         'detail' => $detail,
                     ],
@@ -294,6 +340,9 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
         );
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function exceptionStatus(\Throwable $exception): int
     {
         $knownStatus = match (true) {
@@ -307,11 +356,14 @@ final class ComponentApiDispatcher implements InternalApiDispatcherInterface
             return $knownStatus;
         }
 
-        $code = (int)$exception->getCode();
+        $code = (int) $exception->getCode();
 
         return $code >= 400 && $code <= 599 ? $code : 500;
     }
 
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     private function statusTitle(int $status): string
     {
         return match ($status) {

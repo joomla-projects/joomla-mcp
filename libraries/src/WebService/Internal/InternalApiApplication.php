@@ -1,25 +1,31 @@
 <?php
-
 /**
- * @package     Joomla.Platform
- * @subpackage  WebService
+ * @package     Joomla.Libraries
+ * @subpackage  WebService.Internal
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace Joomla\CMS\WebService\Internal;
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Document\JsonapiDocument;
+use Joomla\CMS\User\User;
 use Joomla\Input\Input;
 
 /**
  * Isolated API application context used while dispatching an internal web service request.
  *
- * The application reuses the outer application's configuration, container, event dispatcher, session, language and
- * identity. Request, document, response body and headers remain local to the internal dispatch. Existing external REST
- * requests continue to use the normal ApiApplication without any changes.
+ * The application reuses the outer application's configuration, container, event dispatcher, session and language.
+ * Its identity is supplied explicitly by the authenticated caller. Request, document, response body and headers remain
+ * local to the internal dispatch.
  *
  * @since  __DEPLOY_VERSION__
  */
@@ -28,7 +34,7 @@ final class InternalApiApplication extends CMSApplication
     /**
      * @since  __DEPLOY_VERSION__
      */
-    public function __construct(CMSApplication $parent, Input $input)
+    public function __construct(CMSApplication $parent, Input $input, User $identity)
     {
         $this->name     = 'api';
         $this->clientId = 3;
@@ -41,7 +47,7 @@ final class InternalApiApplication extends CMSApplication
         );
 
         $this->document = new JsonapiDocument();
-        $this->loadIdentity($parent->getIdentity());
+        $this->loadIdentity($identity);
         $this->loadLanguage($parent->getLanguage());
 
         if (method_exists($this, 'setDispatcher') && method_exists($parent, 'getDispatcher')) {
@@ -51,7 +57,6 @@ final class InternalApiApplication extends CMSApplication
         if (method_exists($this, 'setSession') && method_exists($parent, 'getSession')) {
             $this->setSession($parent->getSession());
         }
-
     }
 
     /**

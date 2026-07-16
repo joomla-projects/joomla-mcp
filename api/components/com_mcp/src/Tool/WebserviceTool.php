@@ -1,41 +1,54 @@
 <?php
-
 /**
- * @package     Joomla.API
+ * @package     Joomla.Administrator
  * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace Joomla\Component\MCP\Api\Tool;
+declare(strict_types=1);
 
-use Joomla\CMS\WebService\Operation\OperationDefinition;
-use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
+namespace Joomla\Component\MCP\Api\Tool;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
+
+use Joomla\CMS\WebService\Operation\OperationDefinition;
+use Joomla\Component\MCP\Api\Core\McpRequestContext;
+use Joomla\Component\MCP\Api\Core\OperationScopeResolver;
+use Mcp\Types\CallToolResult;
+use Mcp\Types\TextContent;
 
 /**
  * Generic MCP tool backed by a canonical Joomla web service operation.
  *
  * @since  __DEPLOY_VERSION__
  */
-final class WebserviceTool implements ToolInterface
+final class WebserviceTool implements ToolInterface, ScopedAbilityInterface
 {
+    /**
+     * @since  __DEPLOY_VERSION__
+     */
     public function __construct(
         private readonly OperationDefinition $operation,
         private readonly OperationInvokerInterface $invoker,
+        private readonly OperationScopeResolver $scopeResolver = new OperationScopeResolver(),
     ) {
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getName(): string
     {
         return $this->operation->operationId;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getSchema(): array
     {
         $schema = [
@@ -52,10 +65,13 @@ final class WebserviceTool implements ToolInterface
         return $schema;
     }
 
-    public function execute(array $params): CallToolResult
+    /**
+     * @inheritDoc
+     */
+    public function execute(array $params, McpRequestContext $context): CallToolResult
     {
         try {
-            $result = $this->invoker->invoke($this->operation, $params);
+            $result = $this->invoker->invoke($this->operation, $params, $context);
             $text   = $this->formatBody($result->body, $result->statusCode);
 
             return new CallToolResult(
@@ -64,22 +80,27 @@ final class WebserviceTool implements ToolInterface
                 null,
                 $result->isSuccessful() && \is_array($result->body) ? $result->body : null,
             );
-        } catch (\Throwable $exception) {
+        } catch (\Throwable) {
             return new CallToolResult(
-                [
-                    new TextContent(
-                        \sprintf(
-                            '%s could not be executed: %s',
-                            $this->operation->operationId,
-                            $exception->getMessage(),
-                        ),
-                    ),
-                ],
+                [new TextContent($this->operation->operationId . ' could not be executed.')],
                 true,
             );
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getRequiredScopes(): array
+    {
+        return $this->scopeResolver->resolve($this->operation);
+    }
+
+    /**
+     * Formats a normalised response body for MCP text content.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
     private function formatBody(mixed $body, int $statusCode): string
     {
         if ($body === null || $body === '') {

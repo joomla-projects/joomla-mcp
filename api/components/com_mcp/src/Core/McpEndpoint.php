@@ -1,11 +1,10 @@
 <?php
-
 /**
- * @package         Joomla.MCP
- * @subpackage      com_mcp
+ * @package     Joomla.Administrator
+ * @subpackage  com_mcp
  *
  * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 declare(strict_types=1);
@@ -16,9 +15,9 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\User\CurrentUserTrait;
-use Joomla\CMS\User\User;
-use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
+use Joomla\CMS\OAuth\ResourceServer\AccessTokenValidatorInterface;
+use Joomla\CMS\OAuth\ResourceServer\TokenValidationException;
+use Joomla\Component\MCP\Api\Auth\SubjectResolutionException;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Stream;
@@ -32,217 +31,198 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * MCP HTTP Endpoint for remote access
+ * OAuth-protected MCP HTTP endpoint.
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpEndpoint
+final class McpEndpoint
 {
-    use CurrentUserTrait;
-
-    /**
-     * @since __DEPLOY_VERSION__
-     */
     private LoggerInterface $logger;
 
     /**
-     * Constructor.
-     *
-     * @param AbilityRegistry $abilityRegistry Tool registry
-     * @param array           $config          Configuration. Possible keys:
-     *                        - logger: Logger instance, defaults to NullLogger
-     *                        - server_name: Server name, defaults to 'Joomla MCP Server'
-     *                        - session_timeout: Session timeout in seconds, defaults to 1800
-     *                        - max_queue_size: Maximum queue size, defaults to 500
-     *                        - enable_sse: Enable Server-Sent Events, defaults to false
-     *                        - shared_hosting: Enable shared hosting mode, defaults to false
-     *                        - tmp_dir: Temporary directory, defaults to JPATH_ROOT . '/tmp'
+     * @param  array<string, mixed>  $config  MCP HTTP runner configuration.
      *
      * @since  __DEPLOY_VERSION__
      */
     public function __construct(
         private readonly AbilityRegistry $abilityRegistry,
-        private readonly AuthServiceInterface $authService,
-        private readonly array $config = []
+        private readonly AccessTokenValidatorInterface $accessTokenValidator,
+        private readonly McpRequestContextFactory $contextFactory,
+        private readonly ProtectedResourceMetadataProvider $metadataProvider,
+        private readonly ScopeAuthoriser $scopeAuthoriser,
+        private readonly BearerTokenExtractor $tokenExtractor = new BearerTokenExtractor(),
+        private readonly array $config = [],
     ) {
         $this->logger = $this->config['logger'] ?? new NullLogger();
     }
 
     /**
-     * Invoke the endpoint
+     * Handles an OAuth-protected MCP HTTP request.
      *
-     * @param HttpMessage $request
-     * @return ResponseInterface
      * @since  __DEPLOY_VERSION__
      */
     public function handle(HttpMessage $request): ResponseInterface
     {
+        $requestId = $this->requestId($request);
+
         try {
-            $headers     = $request->getHeaders();
-            $queryParams = $request->getQueryParams();
+            $token = $this->tokenExtractor->extract($request);
 
-            $this->logger->debug("MCP: Request method: " . $request->getMethod());
-            $this->logger->debug("MCP: Request headers: " . json_encode($headers));
-            $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
-
-            // Check if this is an auth header test request
-            if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
-                return $this->handleAuthHeaderTest($request);
+            if ($token === null) {
+                return $this->authenticationResponse('Missing OAuth access token.');
             }
 
-            // Authenticate via Bearer token or query parameter
-            $token = $this->extractToken($request);
-
-            if (!$token) {
-                $this->logger->error("MCP: No token found in Authorization header or query params");
-
-                return $this->createUnauthorizedResponse('Missing authentication token');
-            }
-
-            $this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
-
-            $tokenInfo = $this->authService->validateToken($token);
-
-            if ($tokenInfo === null) {
-                $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
-
-                return $this->createUnauthorizedResponse('Invalid or expired token');
-            }
-
-            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userid);
-            $this->setCurrentUser(new User($tokenInfo->userid));
-
-            $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
-
-            // Register handlers
-            $this->registerAbilities($server, $this->abilityRegistry);
-
-            // Configure HTTP options
-            $httpOptions = [
-                'session_timeout' => $this->config['session_timeout'] ?? 1800, // 30 minutes
-                'max_queue_size'  => $this->config['max_queue_size'] ?? 500,
-                'enable_sse'      => $this->config['enable_sse'] ?? false,
-                'shared_hosting'  => $this->config['shared_hosting'] ?? false,
-            ];
-
-            $sessionStore = new FileSessionStore(
-                ($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions'
+            $principal = $this->accessTokenValidator->validate(
+                $token,
+                $this->metadataProvider->getResource(),
+            );
+            $this->scopeAuthoriser->assertBaseAccess($principal);
+            $context = $this->contextFactory->create(
+                $principal,
+                $this->metadataProvider->getResource(),
+                $requestId,
             );
 
-            // The SDK would normally write status, headers and body directly to PHP's
-            // output (header(), echo). BufferedIo captures those writes in memory so
-            // we can return a proper response object to the controller instead.
-            $io = new BufferedIo();
+            return $this->runServer($request, $context);
+        } catch (TokenValidationException | SubjectResolutionException $exception) {
+            $this->logger->notice('MCP access token rejected.', ['request_id' => $requestId]);
 
-            $runner = new HttpServerRunner(
-                $server,
-                $server->createInitializationOptions(),
-                $httpOptions,
-                null,
-                $sessionStore,
-                $io
+            return $this->authenticationResponse('Invalid or expired OAuth access token.', true);
+        } catch (InsufficientScopeException $exception) {
+            $this->logger->notice(
+                'MCP access token lacks a required scope.',
+                ['request_id' => $requestId, 'scopes' => $exception->requiredScopes],
             );
 
-            // Suppress warnings/notices from MCP SDK to prevent deprecation issues
-            $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+            return $this->scopeResponse($exception->requiredScopes);
+        } catch (McpAccessDeniedException $exception) {
+            $this->logger->notice('Joomla MCP access denied.', ['request_id' => $requestId]);
 
-            try {
-                $response = $runner->handleRequest($request);
-                $runner->sendResponse($response);
-            } finally {
-                // Restore error reporting
-                error_reporting($oldErrorReporting);
-            }
+            return new JsonResponse(
+                ['error' => 'Forbidden', 'message' => 'Access to the MCP server is not permitted.'],
+                403,
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->error(
+                'The MCP endpoint failed.',
+                ['request_id' => $requestId, 'exception' => $exception],
+            );
 
-            // Forward the captured transport headers (Mcp-Session-Id, Content-Type, ...)
-            $responseHeaders = [];
-
-            foreach ($io->headers as [$name, $value]) {
-                $responseHeaders[$name][] = $value;
-            }
-
-            // Pass the SDK output through byte-for-byte: a decode/re-encode round-trip
-            // would turn empty JSON objects ({}) into empty arrays ([])
-            $body = new Stream('php://temp', 'wb+');
-            $body->write($io->buffer);
-            $body->rewind();
-
-            return new Response($body, $io->status ?? 200, $responseHeaders);
-        } catch (\Throwable $e) {
-            return new JsonResponse([
-                'error'   => 'Internal Server Error',
-                'message' => $e->getMessage(),
-            ], 500);
+            return new JsonResponse(
+                ['error' => 'Internal Server Error', 'message' => 'The MCP request could not be processed.'],
+                500,
+            );
         }
     }
 
     /**
-     * Register MCP handlers
+     * Runs the MCP SDK under an authenticated request context.
      *
-     * @param Server          $server          Server instance
-     * @param AbilityRegistry $abilityRegistry Tool registry
-     *
-     * @return  void
-     *
-     * @since   __DEPLOY_VERSION__
+     * @since  __DEPLOY_VERSION__
      */
-    private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry): void
+    private function runServer(HttpMessage $request, McpRequestContext $context): ResponseInterface
     {
-        // Register tool/list handler
-        $server->registerHandler('tools/list', function () use ($abilityRegistry) {
+        $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
+        $this->registerAbilities($server, $this->abilityRegistry, $context);
+
+        $httpOptions = [
+            'session_timeout' => $this->config['session_timeout'] ?? 1800,
+            'max_queue_size'  => $this->config['max_queue_size'] ?? 500,
+            'enable_sse'      => $this->config['enable_sse'] ?? false,
+            'shared_hosting'  => $this->config['shared_hosting'] ?? false,
+        ];
+        $sessionStore = new FileSessionStore(
+            ($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions',
+        );
+        $io     = new BufferedIo();
+        $runner = new HttpServerRunner(
+            $server,
+            $server->createInitializationOptions(),
+            $httpOptions,
+            null,
+            $sessionStore,
+            $io,
+        );
+
+        $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+
+        try {
+            $response = $runner->handleRequest($request);
+            $runner->sendResponse($response);
+        } finally {
+            error_reporting($oldErrorReporting);
+        }
+
+        $responseHeaders = [];
+
+        foreach ($io->headers as [$name, $value]) {
+            $responseHeaders[$name][] = $value;
+        }
+
+        $body = new Stream('php://temp', 'wb+');
+        $body->write($io->buffer);
+        $body->rewind();
+
+        return new Response($body, $io->status ?? 200, $responseHeaders);
+    }
+
+    /**
+     * Registers context-aware MCP handlers.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function registerAbilities(
+        Server $server,
+        AbilityRegistry $abilityRegistry,
+        McpRequestContext $context,
+    ): void {
+        $server->registerHandler('tools/list', function () use ($abilityRegistry, $context): array {
             $tools = [];
 
             foreach ($abilityRegistry->getTools() as $tool) {
-                $schema = $tool->getSchema();
+                if (!$this->scopeAuthoriser->canUseTool($context->principal, $tool)) {
+                    continue;
+                }
 
-                $toolDefinition = [
-                    'name' => $tool->getName(),
-                    ...$schema,  // Spread the entire schema (description, inputSchema, annotations)
-                ];
-
-                $tools[] = $toolDefinition;
+                $tools[] = ['name' => $tool->getName(), ...$tool->getSchema()];
             }
 
             return ['tools' => $tools];
         });
 
-        // Register tool/call handler
-        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
-            $toolName  = $params->name;
-            $arguments = $params->arguments;
+        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry, $context) {
+            $tool = $abilityRegistry->getTool($params->name);
 
-            $tool = $abilityRegistry->getTool($toolName);
-
-            if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName, 404);
+            if ($tool === null) {
+                throw new \InvalidArgumentException('Tool not found.', 404);
             }
 
-            return $tool->execute($arguments);
+            $this->scopeAuthoriser->assertToolAccess($context->principal, $tool);
+            $arguments = (array) $params->arguments;
+
+            return $tool->execute($arguments, $context);
         });
 
-        // Register resources/list handler
-        $server->registerHandler('resources/list', function () use ($abilityRegistry) {
+        $server->registerHandler('resources/list', function () use ($abilityRegistry): array {
             $resources = [];
 
             foreach ($abilityRegistry->getResources() as $resource) {
                 $resources[] = [
-                    "uri"         => $resource->getUri(),
-                    "name"        => $resource->getName(),
-                    "title"       => $resource->getTitle(),
-                    "description" => $resource->getDescription(),
+                    'uri'         => $resource->getUri(),
+                    'name'        => $resource->getName(),
+                    'title'       => $resource->getTitle(),
+                    'description' => $resource->getDescription(),
                 ];
             }
 
             return ['resources' => $resources];
         });
 
-
-        // Register resources/read handler
         $server->registerHandler('resources/read', function ($params) use ($abilityRegistry) {
             $resource = $abilityRegistry->getResource($params->uri);
 
-            if (!$resource) {
-                throw new \InvalidArgumentException('Resource not found: ' . $params->uri, 404);
+            if ($resource === null) {
+                throw new \InvalidArgumentException('Resource not found.', 404);
             }
 
             return $resource->read();
@@ -250,120 +230,83 @@ class McpEndpoint
     }
 
     /**
-     * Extract token from request (Bearer header or query parameter)
+     * Creates an OAuth Bearer authentication response.
      *
-     * @param HttpMessage $request Request object
-     *
-     * @return  string|null  Token string or null if not found
-     * @since   __DEPLOY_VERSION__
-     */
-    private function extractToken(HttpMessage $request): ?string
-    {
-        // Try Authorization header first (preferred method)
-        $authHeader = $request->getHeader('Authorization') ?? '';
-
-        // Try HTTP_AUTHORIZATION from the server environment
-        if (empty($authHeader)) {
-            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        }
-
-        /**
-         * Apache specific fix: mod_php does not expose the Authorization header in the
-         * environment, only via apache_request_headers().
-         * See https://github.com/symfony/symfony/issues/19693 and the same handling in
-         * plg_api-authentication_token.
-         */
-        if (
-            empty($authHeader) && \PHP_SAPI === 'apache2handler'
-            && \function_exists('apache_request_headers') && apache_request_headers() !== false
-        ) {
-            $apacheHeaders = array_change_key_case(apache_request_headers(), CASE_LOWER);
-
-            if (\array_key_exists('authorization', $apacheHeaders)) {
-                $authHeader = $apacheHeaders['authorization'];
-            }
-        }
-
-        // Another Apache specific fix (mod_rewrite/CGI setups pass the header only as
-        // REDIRECT_HTTP_AUTHORIZATION). See https://github.com/symfony/symfony/issues/1813
-        if (empty($authHeader)) {
-            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-        }
-
-        if (preg_match('/Bearer\s+(\S+)/', $authHeader, $matches)) {
-            return $matches[1];
-        }
-
-        // Fallback to query parameter for backward compatibility
-        $queryParams = $request->getQueryParams();
-
-        return $queryParams['token'] ?? null;
-    }
-
-    /**
-     * Create unauthorized response
-     *
-     * @param string $message Error message
-     *
-     * @return  ResponseInterface  Response object
-     * @since   __DEPLOY_VERSION__
-     */
-    private function createUnauthorizedResponse(string $message): ResponseInterface
-    {
-        return new JsonResponse([
-            'error'   => 'Unauthorized',
-            'message' => $message,
-        ], 401);
-    }
-
-    /**
-     * Handle auth header test request
-     *
-     * @param HttpMessage $request Request object
-     *
-     * @return ResponseInterface           Response object
      * @since  __DEPLOY_VERSION__
      */
-    private function handleAuthHeaderTest(HttpMessage $request): ResponseInterface
+    private function authenticationResponse(string $message, bool $invalid = false): ResponseInterface
     {
-        $headers            = [];
-        $receivedAuthHeader = false;
+        $parameters = [
+            'resource_metadata' => $this->metadataProvider->getMetadataUri(),
+            'scope'             => 'mcp:use',
+        ];
 
-        // Check all possible ways the Authorization header might arrive
-        $authHeader = $request->getHeader('Authorization');
-        if (!empty($authHeader)) {
-            $headers['authorization'] = $authHeader;
-            $receivedAuthHeader       = true;
-        }
-
-        // Check server params for HTTP_AUTHORIZATION
-        $serverParams = $_SERVER;
-        if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
-            $receivedAuthHeader            = true;
-        }
-
-        // Also check for redirect env variable (Apache specific)
-        if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
-            $receivedAuthHeader                     = true;
+        if ($invalid) {
+            $parameters = ['error' => 'invalid_token', ...$parameters];
         }
 
         return new JsonResponse(
-            [
-                'test'                 => 'auth',
-                'headers_received'     => $headers,
-                'auth_header_detected' => $receivedAuthHeader,
-                'server_software'      => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
-                'hint'                 => $receivedAuthHeader
-                    ? 'Authorization header received successfully.'
-                    : 'Authorization header not received.',
-            ],
-            200,
-            [
-                'Access-Control-Allow-Origin'  => '*',
-                'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
-            ]
+            ['error' => 'Unauthorized', 'message' => $message],
+            401,
+            ['WWW-Authenticate' => $this->bearerChallenge($parameters)],
         );
+    }
+
+    /**
+     * Creates an insufficient-scope response.
+     *
+     * @param  list<string>  $scopes  Required scopes.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function scopeResponse(array $scopes): ResponseInterface
+    {
+        return new JsonResponse(
+            ['error' => 'Forbidden', 'message' => 'The access token lacks a required OAuth scope.'],
+            403,
+            [
+                'WWW-Authenticate' => $this->bearerChallenge(
+                    [
+                        'error'             => 'insufficient_scope',
+                        'scope'             => implode(' ', $scopes),
+                        'resource_metadata' => $this->metadataProvider->getMetadataUri(),
+                    ],
+                ),
+            ],
+        );
+    }
+
+    /**
+     * Builds a safe OAuth Bearer challenge.
+     *
+     * @param  array<string, string>  $parameters  Challenge parameters.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function bearerChallenge(array $parameters): string
+    {
+        $values = [];
+
+        foreach ($parameters as $name => $value) {
+            $values[] = $name . '="' . addcslashes($value, "\\\"") . '"';
+        }
+
+        return 'Bearer ' . implode(', ', $values);
+    }
+
+    /**
+     * Returns or generates a request identifier without exposing credentials.
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function requestId(HttpMessage $request): string
+    {
+        $requestId = trim((string) ($request->getHeader('Mcp-Request-Id') ?? ''));
+
+        if ($requestId !== '' && preg_match('/^[A-Za-z0-9._:-]{1,128}$/', $requestId) === 1) {
+            return $requestId;
+        }
+
+        return bin2hex(random_bytes(16));
     }
 }

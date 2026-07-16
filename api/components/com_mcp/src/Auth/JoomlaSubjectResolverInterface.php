@@ -9,30 +9,27 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Api\Tool;
+namespace Joomla\Component\MCP\Api\Auth;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\WebService\Operation\OperationDefinition;
-use Joomla\Component\MCP\Api\Core\McpRequestContext;
+use Joomla\CMS\User\User;
 
 /**
- * Executes a canonical operation for a generic MCP tool.
+ * Maps an OAuth subject to a Joomla user.
  *
  * @since  __DEPLOY_VERSION__
  */
-interface OperationInvokerInterface
+interface JoomlaSubjectResolverInterface
 {
     /**
-     * @param  array<string, mixed>  $arguments  Operation arguments.
+     * Resolves an issuer and subject to an active Joomla user.
+     *
+     * @throws  SubjectResolutionException
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function invoke(
-        OperationDefinition $operation,
-        array $arguments,
-        McpRequestContext $context,
-    ): OperationResult;
+    public function resolve(string $issuer, string $subject): User;
 }
