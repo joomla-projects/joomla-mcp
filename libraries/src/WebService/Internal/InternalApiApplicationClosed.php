@@ -8,14 +8,13 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace Joomla\CMS\WebService\Resource\Attribute\Property;
+namespace Joomla\CMS\WebService\Internal;
 
 /**
- * Marks a resource property as readable but not mass assignable.
+ * Signals that an internally dispatched API controller requested application termination.
  *
  * @since  __DEPLOY_VERSION__
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Guarded
+final class InternalApiApplicationClosed extends \RuntimeException
 {
 }

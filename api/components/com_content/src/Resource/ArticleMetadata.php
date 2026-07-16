@@ -10,17 +10,25 @@
 
 namespace Joomla\Component\Content\Api\Resource;
 
+use Joomla\CMS\WebService\Resource\Attribute\Property\Description;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Example;
+
 /**
  * Represents an article's `metadata` field.
  *
  * Keys match the raw registry stored in the `#__content.metadata` column.
+ *
+ * @since  __DEPLOY_VERSION__
  */
 class ArticleMetadata
 {
-    public function __construct(
-        public string $robots,
-        public string $author,
-        public string $rights,
-    ) {
-    }
+    #[Description('The robots meta tag. Accepts: index, follow / noindex, follow / index, nofollow / noindex, nofollow. An empty value uses the global setting.')]
+    #[Example('index, follow')]
+    public string $robots = '';
+
+    #[Description('The content author conveyed in the author meta tag.')]
+    public string $author = '';
+
+    #[Description('The rights others have to use this content, conveyed in the rights meta tag.')]
+    public string $rights = '';
 }

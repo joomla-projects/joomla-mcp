@@ -10,52 +10,148 @@
 
 namespace Joomla\Component\Content\Api\Resource;
 
+use Joomla\CMS\WebService\Resource\Attribute\AdditionalProperties;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Description;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Example;
 use Joomla\CMS\WebService\Resource\Attribute\Property\Guarded;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Hidden;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Items;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Optional;
+use Joomla\CMS\WebService\Resource\Attribute\Property\Required;
 use Joomla\CMS\WebService\Resource\Resource;
+use Joomla\CMS\WebService\Resource\ResourceProfile;
 use Joomla\Component\Content\Api\Resource\Enum\ArticleState;
 
-class Article extends Resource
+/**
+ * Canonical article resource contract.
+ *
+ * Properties without defaults are required when an article is created. Guarded properties are returned to clients but
+ * cannot be mass assigned. No property is required for an update because PATCH is partial by convention.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+#[AdditionalProperties]
+final class Article extends Resource
 {
-    public function __construct(
-        #[Guarded]
-        public int $id,
-        public string $typeAlias,
-        #[Guarded]
-        public int $asset_id,
-        public string $title,
-        public string $text,
-        public array $tags,
-        #[Description("use * for all languages")]
-        public string $language,
-        #[Description("use 1 for published, 0 for unpublished, 2 for archived, -2 for trashed")]
-        public ArticleState $state,
-        public int $category,
-        public ArticleImage $images,
-        public string $metakey,
-        public string $metadesc,
-        public ArticleMetadata $metadata,
-        public int $access,
-        public int $featured,
-        public string $alias,
-        public string $note,
-        public ?string $publish_up,
-        public ?string $publish_down,
-        public string $created,
-        public int $created_by,
-        public string $created_by_alias,
-        #[Guarded]
-        public string $modified,
-        #[Guarded]
-        public int $modified_by,
-        #[Guarded]
-        public int $hits,
-        #[Guarded]
-        public int $version,
-        public ?string $featured_up,
-        public ?string $featured_down,
-        public ArticleUrls $urls,
-        public ?array $schemaorg,
-    ) {
-    }
+    #[Guarded]
+    public int $id;
+
+    #[Description('The Joomla content type of this item, always com_content.article.')]
+    #[Guarded]
+    public string $typeAlias;
+
+    #[Description('The identifier of the ACL asset backing this article.')]
+    #[Guarded]
+    public int $asset_id;
+
+    #[Required([ResourceProfile::CREATE])]
+    public string $title;
+
+    // Joomla stores the body split into introtext and fulltext but exposes it differently per direction, so the
+    // contract declares both sides, mirroring the catid/category split below.
+    // Joomla lets an article be saved without a body, so this stays optional and defaults to an empty string.
+    #[Description('The complete article text. Add a <hr id="system-readmore"> tag to split the intro and full text.')]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public string $articletext = '';
+
+    #[Description('The article text, with the intro and full text combined.')]
+    #[Hidden([ResourceProfile::CREATE, ResourceProfile::UPDATE])]
+    public string $text;
+
+    #[Description('Tag identifiers when writing. Reading returns the full tag objects.')]
+    #[Items('integer', [ResourceProfile::CREATE, ResourceProfile::UPDATE])]
+    #[Items('object', [ResourceProfile::READ, ResourceProfile::LIST])]
+    public array $tags = [];
+
+    #[Description('The language code. Use * for all languages.')]
+    #[Example('*')]
+    public string $language = '*';
+
+    #[Description('The publication state: 1 published, 0 unpublished, 2 archived or -2 trashed.')]
+    #[Example(1)]
+    #[Optional([ResourceProfile::CREATE])]
+    public ArticleState $state;
+
+    #[Description('The category identifier for list and read endpoints.')]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public int $catid;
+
+    # Folks, please, don't judge us: this has been legacy behavior of the webservices API
+    #[Description('The category identifier for create and update endpoints.')]
+    #[Guarded]
+    #[Hidden([ResourceProfile::CREATE, ResourceProfile::UPDATE])]
+    public object $category;
+
+    #[Optional([ResourceProfile::CREATE])]
+    public ArticleImage $images;
+
+    #[Description('The meta keywords, as a comma separated list.')]
+    public string $metakey = '';
+
+    #[Description('The meta description conveyed in the description meta tag.')]
+    public string $metadesc = '';
+
+    #[Optional([ResourceProfile::CREATE])]
+    public ArticleMetadata $metadata;
+
+    #[Description('The identifier of the view access level that is allowed to see this article.')]
+    public int $access = 1;
+
+    #[Description('Whether the article is featured: 1 featured, 0 not featured.')]
+    public int $featured = 0;
+
+    #[Description('The alias used as part of the URL. Left empty, Joomla derives it from the title.')]
+    public string $alias = '';
+
+    #[Description('An internal note shown only in the administrator interface.')]
+    public ?string $note = null;
+
+    #[Description('When the article starts being published. Null publishes it immediately.')]
+    public ?\DateTimeImmutable $publish_up = null;
+
+    #[Description('When the article stops being published. Null never expires it.')]
+    public ?\DateTimeImmutable $publish_down = null;
+
+    // The administrator lets the creation date be set on create and edited afterwards, so it is writable in both;
+    // omitted on create, Joomla uses the current time.
+    #[Description('The creation date and time. Defaults to the current time when omitted.')]
+    #[Optional([ResourceProfile::CREATE])]
+    public \DateTimeImmutable $created;
+
+    #[Description('The creating user identifier. A value of 0 uses the current user.')]
+    public int $created_by = 0;
+
+    #[Description('A display name shown instead of the author name, without changing who owns the article.')]
+    public string $created_by_alias = '';
+
+    #[Guarded]
+    public \DateTimeImmutable $modified;
+
+    #[Guarded]
+    #[Hidden([ResourceProfile::LIST])]
+    public int $modified_by;
+
+    #[Guarded]
+    public int $hits;
+
+    #[Guarded]
+    public int $version;
+
+    #[Description('When the article starts being featured. Only meaningful while featured is 1.')]
+    public ?\DateTimeImmutable $featured_up = null;
+
+    #[Description('When the article stops being featured. Only meaningful while featured is 1.')]
+    public ?\DateTimeImmutable $featured_down = null;
+
+    #[Optional([ResourceProfile::CREATE])]
+    public ArticleUrls $urls;
+
+    // The webservices accept an explicit position on write but never return it, so it is write-only.
+    #[Description('The article position within its category. Omitted, Joomla assigns the next position.')]
+    #[Optional([ResourceProfile::CREATE])]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public int $ordering;
+
+    #[Guarded]
+    public ?array $schemaorg = null;
 }

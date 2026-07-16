@@ -11,11 +11,11 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 /**
- * Marks a resource property as readable but not mass assignable.
+ * Marks a property as writable but not part of read or list representations.
  *
  * @since  __DEPLOY_VERSION__
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Guarded
+final class WriteOnly
 {
 }

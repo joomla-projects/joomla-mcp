@@ -8,17 +8,21 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace Joomla\CMS\WebService\Resource\Attribute\Property;
+namespace Joomla\CMS\WebService\Resource;
 
 /**
- * Supplies a human-readable property description when the convention-derived description is insufficient.
+ * Standard resource schema profiles.
  *
  * @since  __DEPLOY_VERSION__
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Description
+final class ResourceProfile
 {
-    public function __construct(public string $description)
+    public const READ   = 'read';
+    public const LIST   = 'list';
+    public const CREATE = 'create';
+    public const UPDATE = 'update';
+
+    private function __construct()
     {
     }
 }

@@ -8,17 +8,17 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace Joomla\CMS\WebService\Resource\Attribute\Property;
+namespace Joomla\CMS\WebService\Resource\Attribute;
 
 /**
- * Supplies a human-readable property description when the convention-derived description is insufficient.
+ * Overrides whether a resource schema accepts properties which are not declared by the DTO.
  *
  * @since  __DEPLOY_VERSION__
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Description
+#[\Attribute(\Attribute::TARGET_CLASS)]
+final readonly class AdditionalProperties
 {
-    public function __construct(public string $description)
+    public function __construct(public bool $allowed = true)
     {
     }
 }

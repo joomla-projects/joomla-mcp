@@ -11,11 +11,24 @@
 namespace Joomla\CMS\WebService\Resource\Attribute\Property;
 
 /**
- * Marks a resource property as readable but not mass assignable.
+ * Removes a property from selected resource projections.
  *
  * @since  __DEPLOY_VERSION__
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Guarded
+final readonly class Hidden
 {
+    /**
+     * @param list<string> $on
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(public array $on)
+    {
+    }
+
+    public function appliesTo(string $profile): bool
+    {
+        return \in_array($profile, $this->on, true);
+    }
 }
