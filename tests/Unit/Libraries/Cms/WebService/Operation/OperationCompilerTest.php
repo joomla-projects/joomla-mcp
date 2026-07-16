@@ -36,6 +36,24 @@ final class OperationCompilerTest extends TestCase
         self::assertArrayNotHasKey('author', $list->queryParameters);
     }
 
+    public function testPaginationIsAddedGenericallyRatherThanByTheQueryDto(): void
+    {
+        // Pagination is a framework concern the compiler adds to every list operation, so it appears in the tool
+        // input and transport even though ArticleListQuery does not declare limit or offset itself.
+        $queryProperties = (new \ReflectionClass(
+            \Joomla\Component\Content\Api\Query\ArticleListQuery::class,
+        ))->getProperties();
+
+        self::assertNotContains('limit', array_map(static fn ($p) => $p->getName(), $queryProperties));
+
+        $list = (new OperationCompiler())->compile(ArticlesController::class)[0];
+
+        self::assertArrayHasKey('limit', $list->inputSchema['properties']);
+        self::assertArrayHasKey('offset', $list->inputSchema['properties']);
+        self::assertSame('limit', $list->queryParameters['page[limit]']['argument']);
+        self::assertSame('offset', $list->queryParameters['page[offset]']['argument']);
+    }
+
     public function testUpdateOperationCombinesIdentifierAndResourceProperties(): void
     {
         $operations = (new OperationCompiler())->compile(ArticlesController::class);

@@ -60,7 +60,10 @@ final class OperationCompiler
         $querySchema  = class_exists($queryClass)
             ? $this->schemaFactory->create($queryClass)
             : $this->emptyObjectSchema();
-        $idSchema = ['type' => 'integer', 'minimum' => 1, 'description' => 'The resource identifier.'];
+        // Pagination is a framework concern the API controller reads for every list endpoint, so it is added here for
+        // every resource rather than declared on each query DTO.
+        $listQuerySchema = $this->withPagination($querySchema);
+        $idSchema        = ['type' => 'integer', 'minimum' => 1, 'description' => 'The resource identifier.'];
 
         return [
             new OperationDefinition(
@@ -71,9 +74,9 @@ final class OperationCompiler
                 task: 'displayList',
                 title: 'List ' . $convention['collection'],
                 description: 'Returns a filtered list of ' . $convention['collection'] . '.',
-                inputSchema: $querySchema,
+                inputSchema: $listQuerySchema,
                 outputSchema: ['type' => 'array', 'items' => $listSchema],
-                queryParameters: $this->queryParameters($querySchema),
+                queryParameters: $this->queryParameters($listQuerySchema),
                 acl: ['component' => $component],
                 annotations: $this->annotations('GET'),
                 exposeToMcp: $configuration->exposeToMcp,
@@ -204,6 +207,35 @@ final class OperationCompiler
             'controller'      => $configuration->controller ?? $collection,
             'operationPrefix' => \sprintf('%s.%s', $component, $collection),
         ];
+    }
+
+    /**
+     * Adds the framework-level pagination parameters that Joomla's API controller reads for every list endpoint, so a
+     * resource's query DTO mirrors only its own filters and does not restate pagination itself.
+     *
+     * @param array<string, mixed> $querySchema
+     *
+     * @return array<string, mixed>
+     */
+    private function withPagination(array $querySchema): array
+    {
+        $querySchema['properties'] ??= [];
+
+        $querySchema['properties']['limit'] = [
+            'type'        => ['integer', 'null'],
+            'default'     => null,
+            'description' => 'The maximum number of items to return. Omitted, the component default applies.',
+            'example'     => 50,
+        ];
+
+        $querySchema['properties']['offset'] = [
+            'type'        => ['integer', 'null'],
+            'default'     => null,
+            'description' => 'The number of items to skip before the first returned one, for paging through the result set.',
+            'example'     => 0,
+        ];
+
+        return $querySchema;
     }
 
     /**

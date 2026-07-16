@@ -74,12 +74,4 @@ final class ArticleListQuery
 
     #[Description('The ordering direction. Accepts: asc, desc.')]
     public string $direction = 'asc';
-
-    #[Description('The maximum number of articles to return. Omitted, the component default applies.')]
-    #[Example(50)]
-    public ?int $limit = null;
-
-    #[Description('The number of articles to skip before the first returned one, for paging through the result set.')]
-    #[Example(0)]
-    public ?int $offset = null;
 }
