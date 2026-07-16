@@ -112,11 +112,10 @@ final class Article extends Resource
     #[Description('When the article stops being published. Null never expires it.')]
     public ?\DateTimeImmutable $publish_down = null;
 
-    // The administrator lets the creation date be set, so it is writable on create; omitted, Joomla uses the current
-    // time. It is not editable afterwards, so it stays out of the update schema.
+    // The administrator lets the creation date be set on create and edited afterwards, so it is writable in both;
+    // omitted on create, Joomla uses the current time.
     #[Description('The creation date and time. Defaults to the current time when omitted.')]
     #[Optional([ResourceProfile::CREATE])]
-    #[Hidden([ResourceProfile::UPDATE])]
     public \DateTimeImmutable $created;
 
     #[Description('The creating user identifier. A value of 0 uses the current user.')]
@@ -146,6 +145,12 @@ final class Article extends Resource
 
     #[Optional([ResourceProfile::CREATE])]
     public ArticleUrls $urls;
+
+    // The webservices accept an explicit position on write but never return it, so it is write-only.
+    #[Description('The article position within its category. Omitted, Joomla assigns the next position.')]
+    #[Optional([ResourceProfile::CREATE])]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public int $ordering;
 
     #[Guarded]
     public ?array $schemaorg = null;

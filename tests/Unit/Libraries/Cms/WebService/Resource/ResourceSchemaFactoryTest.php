@@ -57,18 +57,31 @@ final class ResourceSchemaFactoryTest extends TestCase
         self::assertArrayNotHasKey('articletext', $schema['properties']);
     }
 
-    public function testCreationDateIsSettableOnCreateButNotOnUpdate(): void
+    public function testCreationDateIsSettableOnCreateAndUpdate(): void
     {
         $factory = new ResourceSchemaFactory();
 
-        // The administrator lets the creation date be set, so create exposes it without demanding it.
+        // The administrator lets the creation date be set on create and edited afterwards, so it is writable in both
+        // without being demanded on either.
         $create = $factory->create(Article::class, ResourceProfile::CREATE);
         self::assertArrayHasKey('created', $create['properties']);
         self::assertNotContains('created', $create['required'] ?? []);
 
-        // It is not editable afterwards, so it stays out of the update schema.
         $update = $factory->create(Article::class, ResourceProfile::UPDATE);
-        self::assertArrayNotHasKey('created', $update['properties']);
+        self::assertArrayHasKey('created', $update['properties']);
+        self::assertNotContains('created', $update['required'] ?? []);
+    }
+
+    public function testOrderingIsWriteOnly(): void
+    {
+        $factory = new ResourceSchemaFactory();
+
+        // The webservices accept a position on write but never render it, so ordering is present on create and update
+        // and absent from read and list.
+        self::assertArrayHasKey('ordering', $factory->create(Article::class, ResourceProfile::CREATE)['properties']);
+        self::assertArrayHasKey('ordering', $factory->create(Article::class, ResourceProfile::UPDATE)['properties']);
+        self::assertArrayNotHasKey('ordering', $factory->create(Article::class, ResourceProfile::READ)['properties']);
+        self::assertArrayNotHasKey('ordering', $factory->create(Article::class, ResourceProfile::LIST)['properties']);
     }
 
     public function testNestedValueObjectsAreExpandedIntoTheSchema(): void
