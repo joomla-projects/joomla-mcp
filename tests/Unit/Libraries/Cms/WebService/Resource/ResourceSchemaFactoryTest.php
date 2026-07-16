@@ -13,8 +13,10 @@ final class ResourceSchemaFactoryTest extends TestCase
     {
         $schema = (new ResourceSchemaFactory())->create(Article::class, ResourceProfile::CREATE);
 
-        self::assertSame(['title', 'text', 'catid'], $schema['required']);
+        self::assertSame(['title', 'articletext', 'catid'], $schema['required']);
         self::assertArrayNotHasKey('id', $schema['properties']);
+        // The body is addressed as articletext on write and text on read; neither leaks into the other profile.
+        self::assertArrayNotHasKey('text', $schema['properties']);
         self::assertSame('*', $schema['properties']['language']['default']);
         self::assertSame('integer', $schema['properties']['tags']['items']['type']);
         self::assertTrue($schema['additionalProperties']);
@@ -48,6 +50,9 @@ final class ResourceSchemaFactoryTest extends TestCase
         self::assertTrue($schema['properties']['id']['readOnly']);
         self::assertSame('object', $schema['properties']['tags']['items']['type']);
         self::assertSame('date-time', $schema['properties']['created']['format']);
+        // Read exposes the combined body as text; the write-only articletext is absent.
+        self::assertArrayHasKey('text', $schema['properties']);
+        self::assertArrayNotHasKey('articletext', $schema['properties']);
     }
 
     public function testNestedValueObjectsAreExpandedIntoTheSchema(): void

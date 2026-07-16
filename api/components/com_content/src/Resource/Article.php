@@ -47,7 +47,14 @@ final class Article extends Resource
     #[Required([ResourceProfile::CREATE])]
     public string $title;
 
-    #[Description('The complete article text accepted by the established create endpoint.')]
+    // Joomla stores the body split into introtext and fulltext but exposes it differently per direction, so the
+    // contract declares both sides, mirroring the catid/category split below.
+    #[Description('The complete article text. Add a <hr id="system-readmore"> tag to split the intro and full text.')]
+    #[Hidden([ResourceProfile::LIST, ResourceProfile::READ])]
+    public string $articletext;
+
+    #[Description('The article text, with the intro and full text combined.')]
+    #[Hidden([ResourceProfile::CREATE, ResourceProfile::UPDATE])]
     public string $text;
 
     #[Description('Tag identifiers when writing. Reading returns the full tag objects.')]
