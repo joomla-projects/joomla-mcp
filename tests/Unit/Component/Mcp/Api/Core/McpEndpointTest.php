@@ -10,12 +10,16 @@
 
 namespace Joomla\Tests\Unit\Component\Mcp\Api\Core;
 
+use Joomla\CMS\Mcp\Resource\ResourceInterface;
 use Joomla\CMS\Mcp\Resource\ResourceResult;
+use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
+use Joomla\CMS\Mcp\Tool\ToolInterface;
 use Joomla\CMS\Mcp\Tool\ToolResult;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
 use Joomla\Tests\Unit\UnitTestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Test class for the McpEndpoint result conversion to the MCP wire format.
@@ -234,5 +238,161 @@ class McpEndpointTest extends UnitTestCase
             ],
             $this->toWireFormat(ResourceResult::blob('joomla://media/logo.png', 'YmxvYg==', 'image/png'))
         );
+    }
+
+    /**
+     * A single invalid resource template (empty name/uriTemplate) must not break the whole
+     * resources/templates/list response; valid templates must still be returned. See issue #33.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testInvalidResourceTemplateIsSkipped(): void
+    {
+        $valid   = $this->createResourceTemplate('article', 'joomla://articles/{id}');
+        $invalid = $this->createResourceTemplate('', '');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning');
+
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class),
+            ['logger' => $logger]
+        );
+
+        $converted = (new \ReflectionMethod(McpEndpoint::class, 'toListResourceTemplatesResult'))
+            ->invoke($endpoint, [$valid, $invalid]);
+
+        $wire = json_decode(json_encode($converted), true);
+
+        $this->assertCount(1, $wire['resourceTemplates']);
+        $this->assertSame('article', $wire['resourceTemplates'][0]['name']);
+        $this->assertSame('joomla://articles/{id}', $wire['resourceTemplates'][0]['uriTemplate']);
+    }
+
+    /**
+     * A single tool with an empty name is skipped so it cannot break tools/list.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testInvalidToolIsSkipped(): void
+    {
+        $valid   = $this->createTool('purgeCache');
+        $invalid = $this->createTool('');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning');
+
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class),
+            ['logger' => $logger]
+        );
+
+        $converted = (new \ReflectionMethod(McpEndpoint::class, 'toListToolsResult'))
+            ->invoke($endpoint, [$valid, $invalid]);
+
+        $wire = json_decode(json_encode($converted), true);
+
+        $this->assertCount(1, $wire['tools']);
+        $this->assertSame('purgeCache', $wire['tools'][0]['name']);
+    }
+
+    /**
+     * A single invalid resource (empty uri/name) must not break the whole resources/list
+     * response; valid resources must still be returned. See issue #33.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testInvalidResourceIsSkipped(): void
+    {
+        $valid   = $this->createResource('joomla://config', 'config');
+        $invalid = $this->createResource('', '');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning');
+
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class),
+            ['logger' => $logger]
+        );
+
+        $converted = (new \ReflectionMethod(McpEndpoint::class, 'toListResourcesResult'))
+            ->invoke($endpoint, [$valid, $invalid]);
+
+        $wire = json_decode(json_encode($converted), true);
+
+        $this->assertCount(1, $wire['resources']);
+        $this->assertSame('joomla://config', $wire['resources'][0]['uri']);
+        $this->assertSame('config', $wire['resources'][0]['name']);
+    }
+
+    /**
+     * Build a resource template stub with the given name and uriTemplate.
+     *
+     * @param string $name         The template name
+     * @param string $uriTemplate  The URI template
+     *
+     * @return  ResourceTemplateInterface
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createResourceTemplate(string $name, string $uriTemplate): ResourceTemplateInterface
+    {
+        $template = $this->createMock(ResourceTemplateInterface::class);
+        $template->method('getName')->willReturn($name);
+        $template->method('getUriTemplate')->willReturn($uriTemplate);
+        $template->method('getTitle')->willReturn('');
+        $template->method('getDescription')->willReturn('');
+        $template->method('getMimeType')->willReturn('');
+
+        return $template;
+    }
+
+    /**
+     * Build a tool mock reporting the given name and an empty schema.
+     *
+     * @param string $name  The tool name
+     *
+     * @return ToolInterface
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function createTool(string $name): ToolInterface
+    {
+        $tool = $this->createMock(ToolInterface::class);
+        $tool->method('getName')->willReturn($name);
+        $tool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object']]);
+
+        return $tool;
+    }
+
+    /**
+     * Build a resource stub with the given uri and name.
+     *
+     * @param string $uri   The resource URI
+     * @param string $name  The resource name
+     *
+     * @return  ResourceInterface
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createResource(string $uri, string $name): ResourceInterface
+    {
+        $resource = $this->createMock(ResourceInterface::class);
+        $resource->method('getUri')->willReturn($uri);
+        $resource->method('getName')->willReturn($name);
+        $resource->method('getTitle')->willReturn('');
+        $resource->method('getDescription')->willReturn('');
+        $resource->method('getMimeType')->willReturn('');
+
+        return $resource;
     }
 }
