@@ -21,6 +21,8 @@ use Joomla\CMS\Mcp\Resource\ResourceInterface;
 use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
 use Joomla\CMS\Mcp\Tool\ToolInterface;
 use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Registry for MCP abilities (tools, resources, resource templates and prompts)
@@ -57,26 +59,45 @@ class AbilityRegistry
      */
     protected array $prompts = [];
 
-    public function __construct()
+    /**
+     * Constructor.
+     *
+     * @param LoggerInterface $logger  Logger for registration diagnostics
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(private readonly LoggerInterface $logger = new NullLogger())
     {
     }
 
+    /**
+     * Register an ability under its name or URI.
+     *
+     * The first registration for a key wins; a duplicate is logged and ignored so one misconfigured plugin cannot
+     * displace another ability or abort registration.
+     *
+     * @param PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability  The ability to register
+     *
+     * @return void
+     *
+     * @since  __DEPLOY_VERSION__
+     */
     public function addAbility(PromptInterface|ResourceInterface|ResourceTemplateInterface|ToolInterface $ability): void
     {
-        switch (true) {
-            case $ability instanceof PromptInterface:
-                $this->prompts[$ability->getName()] = $ability;
-                break;
-            case $ability instanceof ResourceInterface:
-                $this->resources[$ability->getUri()] = $ability;
-                break;
-            case $ability instanceof ResourceTemplateInterface:
-                $this->resourceTemplates[$ability->getName()] = $ability;
-                break;
-            case $ability instanceof ToolInterface:
-                $this->tools[$ability->getName()] = $ability;
-                break;
+        [$store, $key, $label] = match (true) {
+            $ability instanceof PromptInterface           => ['prompts', $ability->getName(), 'Prompt'],
+            $ability instanceof ResourceInterface         => ['resources', $ability->getUri(), 'Resource'],
+            $ability instanceof ResourceTemplateInterface => ['resourceTemplates', $ability->getName(), 'Resource template'],
+            $ability instanceof ToolInterface             => ['tools', $ability->getName(), 'Tool'],
+        };
+
+        if (isset($this->{$store}[$key])) {
+            $this->logger->warning(\sprintf('MCP: %s already registered, ignoring duplicate: %s', $label, $key));
+
+            return;
         }
+
+        $this->{$store}[$key] = $ability;
     }
 
     /**

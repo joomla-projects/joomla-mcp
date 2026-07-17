@@ -110,7 +110,7 @@ final class McpController extends BaseController
      */
     private function collectAbilities(): AbilityRegistry
     {
-        $abilities = new AbilityRegistry();
+        $abilities = new AbilityRegistry($this->logger);
 
         PluginHelper::importPlugin('mcp');
         $event = new InitialiseMCPServerEvent($abilities);
