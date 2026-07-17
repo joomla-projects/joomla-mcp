@@ -98,11 +98,6 @@ class McpEndpoint
             $this->logger->debug("MCP: Request headers: " . json_encode($headers));
             $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
 
-            // Check if this is an auth header test request
-            if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
-                return $this->handleAuthHeaderTest($request);
-            }
-
             // Authenticate via Bearer token or query parameter
             $token = $this->extractToken($request);
 
@@ -428,56 +423,5 @@ class McpEndpoint
             'error'   => 'Unauthorized',
             'message' => $message,
         ], 401);
-    }
-
-    /**
-     * Handle auth header test request
-     *
-     * @param HttpMessage $request Request object
-     *
-     * @return ResponseInterface           Response object
-     * @since  __DEPLOY_VERSION__
-     */
-    private function handleAuthHeaderTest(HttpMessage $request): ResponseInterface
-    {
-        $headers            = [];
-        $receivedAuthHeader = false;
-
-        // Check all possible ways the Authorization header might arrive
-        $authHeader = $request->getHeader('Authorization');
-        if (!empty($authHeader)) {
-            $headers['authorization'] = $authHeader;
-            $receivedAuthHeader       = true;
-        }
-
-        // Check server params for HTTP_AUTHORIZATION
-        $serverParams = $_SERVER;
-        if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
-            $receivedAuthHeader            = true;
-        }
-
-        // Also check for redirect env variable (Apache specific)
-        if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
-            $receivedAuthHeader                     = true;
-        }
-
-        return new JsonResponse(
-            [
-                'test'                 => 'auth',
-                'headers_received'     => $headers,
-                'auth_header_detected' => $receivedAuthHeader,
-                'server_software'      => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
-                'hint'                 => $receivedAuthHeader
-                    ? 'Authorization header received successfully.'
-                    : 'Authorization header not received.',
-            ],
-            200,
-            [
-                'Access-Control-Allow-Origin'  => '*',
-                'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
-            ]
-        );
     }
 }
