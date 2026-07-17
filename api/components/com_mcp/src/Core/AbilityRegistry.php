@@ -92,7 +92,7 @@ class AbilityRegistry
         };
 
         if (isset($this->{$store}[$key])) {
-            $this->logger->warning(sprintf('MCP: %s already registered, ignoring duplicate: %s', $label, $key));
+            $this->logger->warning(\sprintf('MCP: %s already registered, ignoring duplicate: %s', $label, $key));
 
             return;
         }
