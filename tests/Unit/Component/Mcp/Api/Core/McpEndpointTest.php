@@ -16,6 +16,7 @@ use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
 use Joomla\Tests\Unit\UnitTestCase;
+use Mcp\Server\Transport\Http\HttpMessage;
 
 /**
  * Test class for the McpEndpoint result conversion to the MCP wire format.
@@ -47,6 +48,67 @@ class McpEndpointTest extends UnitTestCase
         $converted = (new \ReflectionMethod(McpEndpoint::class, $method))->invoke($endpoint, $result);
 
         return json_decode(json_encode($converted), true);
+    }
+
+    /**
+     * Invoke the private extractToken method with a prepared request
+     *
+     * @param HttpMessage $request  The request to extract the token from
+     *
+     * @return  string|null  The extracted token
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    private function extractToken(HttpMessage $request): ?string
+    {
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class)
+        );
+
+        return (new \ReflectionMethod(McpEndpoint::class, 'extractToken'))->invoke($endpoint, $request);
+    }
+
+    /**
+     * The Bearer token is read from the Authorization header.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenReadsBearerHeader(): void
+    {
+        $request = new HttpMessage();
+        $request->setHeader('Authorization', 'Bearer abc123');
+
+        $this->assertSame('abc123', $this->extractToken($request));
+    }
+
+    /**
+     * A token supplied only as a query parameter is ignored to avoid leaking it into logs.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenIgnoresQueryParameter(): void
+    {
+        $request = new HttpMessage();
+        $request->setQueryParams(['token' => 'query-token']);
+
+        $this->assertNull($this->extractToken($request));
+    }
+
+    /**
+     * With no Authorization header present, no token is returned.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenReturnsNullWithoutHeader(): void
+    {
+        $this->assertNull($this->extractToken(new HttpMessage()));
     }
 
     /**

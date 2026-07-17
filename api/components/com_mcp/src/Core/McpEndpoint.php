@@ -95,7 +95,16 @@ class McpEndpoint
             $queryParams = $request->getQueryParams();
 
             $this->logger->debug("MCP: Request method: " . $request->getMethod());
-            $this->logger->debug("MCP: Request headers: " . json_encode($headers));
+            // Redact the Authorization header before logging.
+            $loggableHeaders = $headers;
+
+            foreach (array_keys($loggableHeaders) as $name) {
+                if (strcasecmp((string) $name, 'Authorization') === 0) {
+                    $loggableHeaders[$name] = '***';
+                }
+            }
+
+            $this->logger->debug("MCP: Request headers: " . json_encode($loggableHeaders));
             $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
 
             // Check if this is an auth header test request
@@ -103,21 +112,21 @@ class McpEndpoint
                 return $this->handleAuthHeaderTest($request);
             }
 
-            // Authenticate via Bearer token or query parameter
+            // Authenticate via the Authorization: Bearer header
             $token = $this->extractToken($request);
 
             if (!$token) {
-                $this->logger->error("MCP: No token found in Authorization header or query params");
+                $this->logger->error("MCP: No token found in Authorization header");
 
                 return $this->createUnauthorizedResponse('Missing authentication token');
             }
 
-            $this->logger->debug("MCP: Received token: " . substr($token, 0, 20) . "...");
+            $this->logger->debug("MCP: Token received");
 
             $tokenInfo = $this->authService->validateToken($token);
 
             if ($tokenInfo === null) {
-                $this->logger->error("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
+                $this->logger->error("MCP: Token validation failed");
 
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
@@ -184,10 +193,33 @@ class McpEndpoint
 
             return new Response($body, $io->status ?? 200, $responseHeaders);
         } catch (\Throwable $e) {
+            // Log the detail; return a generic message unless in debug mode.
+            $this->logger->error('MCP: Unhandled exception: ' . $e->getMessage());
+
+            $message = $this->isDebug()
+                ? $e->getMessage()
+                : 'An internal error occurred while handling the MCP request.';
+
             return new JsonResponse([
                 'error'   => 'Internal Server Error',
-                'message' => $e->getMessage(),
+                'message' => $message,
             ], 500);
+        }
+    }
+
+    /**
+     * Whether the application is running in debug mode
+     *
+     * @return  boolean
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function isDebug(): bool
+    {
+        try {
+            return (bool) Factory::getApplication()->get('debug');
+        } catch (\Throwable) {
+            return false;
         }
     }
 
@@ -364,7 +396,7 @@ class McpEndpoint
     }
 
     /**
-     * Extract token from request (Bearer header or query parameter)
+     * Extract the bearer token from the request's Authorization header
      *
      * @param HttpMessage $request Request object
      *
@@ -408,10 +440,8 @@ class McpEndpoint
             return $matches[1];
         }
 
-        // Fallback to query parameter for backward compatibility
-        $queryParams = $request->getQueryParams();
-
-        return $queryParams['token'] ?? null;
+        // No query-parameter fallback: query strings leak into logs and proxies.
+        return null;
     }
 
     /**
