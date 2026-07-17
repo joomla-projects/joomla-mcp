@@ -315,7 +315,7 @@ class McpEndpoint
                 Tool::fromArray($definition)->validate();
             } catch (\InvalidArgumentException $e) {
                 $this->logger->warning(
-                    sprintf('MCP: Skipping invalid tool (name="%s"): %s', $tool->getName(), $e->getMessage())
+                    \sprintf('MCP: Skipping invalid tool (name="%s"): %s', $tool->getName(), $e->getMessage())
                 );
 
                 continue;
@@ -354,7 +354,7 @@ class McpEndpoint
                 Resource::fromArray($definition)->validate();
             } catch (\InvalidArgumentException $e) {
                 $this->logger->warning(
-                    sprintf(
+                    \sprintf(
                         'MCP: Skipping invalid resource (uri="%s", name="%s"): %s',
                         $resource->getUri(),
                         $resource->getName(),
@@ -398,7 +398,7 @@ class McpEndpoint
                 ResourceTemplate::fromArray($definition)->validate();
             } catch (\InvalidArgumentException $e) {
                 $this->logger->warning(
-                    sprintf(
+                    \sprintf(
                         'MCP: Skipping invalid resource template (name="%s", uriTemplate="%s"): %s',
                         $template->getName(),
                         $template->getUriTemplate(),
