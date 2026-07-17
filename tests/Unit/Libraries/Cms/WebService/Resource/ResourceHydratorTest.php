@@ -34,6 +34,17 @@ final class ResourceHydratorTest extends TestCase
         self::assertFalse($article->has('alias'));
     }
 
+    public function testCreateHydrationHydratesNestedValueObjects(): void
+    {
+        /** @var Article $article */
+        $article = Article::fromArray(
+            ['title' => 'Example', 'images' => ['image_intro' => 'a.jpg']],
+            ResourceProfile::CREATE,
+        );
+
+        self::assertSame('a.jpg', $article->images->image_intro);
+    }
+
     public function testUpdateHydrationRejectsGuardedProperties(): void
     {
         $this->expectException(\InvalidArgumentException::class);
