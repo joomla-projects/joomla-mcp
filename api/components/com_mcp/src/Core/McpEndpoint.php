@@ -40,6 +40,9 @@ use Mcp\Types\ListResourcesResult;
 use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ListToolsResult;
 use Mcp\Types\ReadResourceResult;
+use Mcp\Types\Resource;
+use Mcp\Types\ResourceTemplate;
+use Mcp\Types\Tool;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -301,11 +304,24 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($tools as $tool) {
-            $definitions[] = [
+            $definition = [
                 'name' => $tool->getName(),
                 // Spread the entire schema (description, inputSchema, annotations)
                 ...$tool->getSchema(),
             ];
+
+            // Validate each entry through the SDK so one invalid tool cannot fail the whole list.
+            try {
+                Tool::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf('MCP: Skipping invalid tool (name="%s"): %s', $tool->getName(), $e->getMessage())
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListToolsResult::fromResponseData(['tools' => $definitions]);
@@ -325,13 +341,31 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($resources as $resource) {
-            $definitions[] = [
+            $definition = [
                 'uri'         => $resource->getUri(),
                 'name'        => $resource->getName(),
                 'title'       => $resource->getTitle(),
                 'description' => $resource->getDescription(),
                 'mimeType'    => $resource->getMimeType(),
             ];
+
+            // Validate each entry through the SDK so one invalid resource cannot fail the whole list.
+            try {
+                Resource::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource (uri="%s", name="%s"): %s',
+                        $resource->getUri(),
+                        $resource->getName(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListResourcesResult::fromResponseData(['resources' => $definitions]);
@@ -351,13 +385,31 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($templates as $template) {
-            $definitions[] = [
+            $definition = [
                 'name'        => $template->getName(),
                 'uriTemplate' => $template->getUriTemplate(),
                 'title'       => $template->getTitle(),
                 'description' => $template->getDescription(),
                 'mimeType'    => $template->getMimeType(),
             ];
+
+            // Validate each entry through the SDK so one invalid template cannot fail the whole list.
+            try {
+                ResourceTemplate::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource template (name="%s", uriTemplate="%s"): %s',
+                        $template->getName(),
+                        $template->getUriTemplate(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListResourceTemplatesResult::fromResponseData(['resourceTemplates' => $definitions]);
