@@ -16,6 +16,7 @@ use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
 use Joomla\Tests\Unit\UnitTestCase;
+use Mcp\Server\Transport\Http\HttpMessage;
 
 /**
  * Test class for the McpEndpoint result conversion to the MCP wire format.
@@ -47,6 +48,33 @@ class McpEndpointTest extends UnitTestCase
         $converted = (new \ReflectionMethod(McpEndpoint::class, $method))->invoke($endpoint, $result);
 
         return json_decode(json_encode($converted), true);
+    }
+
+    /**
+     * A request without an authentication token must be rejected and must never
+     * reach the ability registry. Guards against the removed ?test=auth bypass.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testRequestWithoutTokenIsRejected(): void
+    {
+        // Ensure no ambient Authorization header leaks in from the environment
+        unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+
+        $authService = $this->createMock(AuthServiceInterface::class);
+        $authService->expects($this->never())->method('validateToken');
+
+        $endpoint = new McpEndpoint($this->createMock(AbilityRegistry::class), $authService);
+
+        $request = new HttpMessage();
+        $request->setMethod('POST');
+        $request->setQueryParams(['test' => 'auth']);
+
+        $response = $endpoint->handle($request);
+
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     /**
