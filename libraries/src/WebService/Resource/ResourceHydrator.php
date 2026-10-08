@@ -136,6 +136,40 @@ final class ResourceHydrator
             return $this->hydrate($typeName, $value, $profile);
         }
 
+        // A nested contract class need not be a Resource itself: a plain value object such as ArticleUrls carries
+        // only typed properties. It is hydrated by the same conventions, mirroring what the schema factory declares.
+        if (\is_array($value) && class_exists($typeName) && !enum_exists($typeName)) {
+            return $this->hydrateValueObject($typeName, $value, $profile);
+        }
+
         return $value;
+    }
+
+    /**
+     * @param class-string         $className
+     * @param array<string, mixed> $data
+     */
+    private function hydrateValueObject(string $className, array $data, string $profile): object
+    {
+        $reflection = new \ReflectionClass($className);
+        $object     = $reflection->newInstanceWithoutConstructor();
+
+        foreach ($data as $name => $value) {
+            if (!$reflection->hasProperty($name)) {
+                throw new \InvalidArgumentException(
+                    \sprintf('Property %s is not declared by %s.', $name, $className),
+                );
+            }
+
+            $property = $reflection->getProperty($name);
+
+            if (!$property->isPublic() || $property->isStatic()) {
+                continue;
+            }
+
+            $property->setValue($object, $this->hydrateValue($property->getType(), $value, $profile));
+        }
+
+        return $object;
     }
 }
