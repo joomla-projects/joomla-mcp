@@ -40,6 +40,9 @@ use Mcp\Types\ListResourcesResult;
 use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ListToolsResult;
 use Mcp\Types\ReadResourceResult;
+use Mcp\Types\Resource;
+use Mcp\Types\ResourceTemplate;
+use Mcp\Types\Tool;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -106,11 +109,6 @@ class McpEndpoint
 
             $this->logger->debug("MCP: Request headers: " . json_encode($loggableHeaders));
             $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
-
-            // Check if this is an auth header test request
-            if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
-                return $this->handleAuthHeaderTest($request);
-            }
 
             // Authenticate via the Authorization: Bearer header
             $token = $this->extractToken($request);
@@ -333,11 +331,24 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($tools as $tool) {
-            $definitions[] = [
+            $definition = [
                 'name' => $tool->getName(),
                 // Spread the entire schema (description, inputSchema, annotations)
                 ...$tool->getSchema(),
             ];
+
+            // Validate each entry through the SDK so one invalid tool cannot fail the whole list.
+            try {
+                Tool::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf('MCP: Skipping invalid tool (name="%s"): %s', $tool->getName(), $e->getMessage())
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListToolsResult::fromResponseData(['tools' => $definitions]);
@@ -357,13 +368,31 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($resources as $resource) {
-            $definitions[] = [
+            $definition = [
                 'uri'         => $resource->getUri(),
                 'name'        => $resource->getName(),
                 'title'       => $resource->getTitle(),
                 'description' => $resource->getDescription(),
                 'mimeType'    => $resource->getMimeType(),
             ];
+
+            // Validate each entry through the SDK so one invalid resource cannot fail the whole list.
+            try {
+                Resource::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource (uri="%s", name="%s"): %s',
+                        $resource->getUri(),
+                        $resource->getName(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListResourcesResult::fromResponseData(['resources' => $definitions]);
@@ -383,13 +412,31 @@ class McpEndpoint
         $definitions = [];
 
         foreach ($templates as $template) {
-            $definitions[] = [
+            $definition = [
                 'name'        => $template->getName(),
                 'uriTemplate' => $template->getUriTemplate(),
                 'title'       => $template->getTitle(),
                 'description' => $template->getDescription(),
                 'mimeType'    => $template->getMimeType(),
             ];
+
+            // Validate each entry through the SDK so one invalid template cannot fail the whole list.
+            try {
+                ResourceTemplate::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource template (name="%s", uriTemplate="%s"): %s',
+                        $template->getName(),
+                        $template->getUriTemplate(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
         }
 
         return ListResourceTemplatesResult::fromResponseData(['resourceTemplates' => $definitions]);
@@ -440,7 +487,6 @@ class McpEndpoint
             return $matches[1];
         }
 
-        // No query-parameter fallback: query strings leak into logs and proxies.
         return null;
     }
 
@@ -458,56 +504,5 @@ class McpEndpoint
             'error'   => 'Unauthorized',
             'message' => $message,
         ], 401);
-    }
-
-    /**
-     * Handle auth header test request
-     *
-     * @param HttpMessage $request Request object
-     *
-     * @return ResponseInterface           Response object
-     * @since  __DEPLOY_VERSION__
-     */
-    private function handleAuthHeaderTest(HttpMessage $request): ResponseInterface
-    {
-        $headers            = [];
-        $receivedAuthHeader = false;
-
-        // Check all possible ways the Authorization header might arrive
-        $authHeader = $request->getHeader('Authorization');
-        if (!empty($authHeader)) {
-            $headers['authorization'] = $authHeader;
-            $receivedAuthHeader       = true;
-        }
-
-        // Check server params for HTTP_AUTHORIZATION
-        $serverParams = $_SERVER;
-        if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
-            $receivedAuthHeader            = true;
-        }
-
-        // Also check for redirect env variable (Apache specific)
-        if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
-            $receivedAuthHeader                     = true;
-        }
-
-        return new JsonResponse(
-            [
-                'test'                 => 'auth',
-                'headers_received'     => $headers,
-                'auth_header_detected' => $receivedAuthHeader,
-                'server_software'      => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
-                'hint'                 => $receivedAuthHeader
-                    ? 'Authorization header received successfully.'
-                    : 'Authorization header not received.',
-            ],
-            200,
-            [
-                'Access-Control-Allow-Origin'  => '*',
-                'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
-            ]
-        );
     }
 }
