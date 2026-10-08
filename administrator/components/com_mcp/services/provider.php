@@ -21,7 +21,7 @@ use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\Component\MCP\Api\Auth\DemoAuthService;
+use Joomla\Component\MCP\Api\Auth\StaticTokenAuthService;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 
@@ -50,7 +50,7 @@ return new class () implements ServiceProviderInterface {
             function (Container $container) {
                 $mvcFactory       = $container->get(MVCFactoryInterface::class);
                 $accessTokenModel = $mvcFactory->createModel('Mcp', 'Administrator');
-                Factory::$application->set('mcp.authService', new DemoAuthService($accessTokenModel));
+                Factory::$application->set('mcp.authService', new StaticTokenAuthService($accessTokenModel));
                 $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
                 $component->setMVCFactory($mvcFactory);
 

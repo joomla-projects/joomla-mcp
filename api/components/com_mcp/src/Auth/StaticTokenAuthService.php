@@ -23,7 +23,7 @@ use Joomla\Component\MCP\Administrator\Model\McpModel;
  *
  * @since  __DEPLOY_VERSION__
  */
-class DemoAuthService implements AuthServiceInterface
+class StaticTokenAuthService implements AuthServiceInterface
 {
     /**
      * Constructor.
