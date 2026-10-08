@@ -28,7 +28,7 @@ final class InternalApiInputTest extends TestCase
                 'data'   => ['title' => 'Changed'],
                 'title'  => 'Changed',
             ],
-            ['title'  => 'Changed'],
+            ['title' => 'Changed'],
             ['filter' => ['state' => 1]],
             'PATCH',
         );
