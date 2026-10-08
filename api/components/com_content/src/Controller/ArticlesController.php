@@ -13,6 +13,7 @@ namespace Joomla\Component\Content\Api\Controller;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Helper\TagsHelper;
 use Joomla\CMS\MVC\Controller\ApiController;
+use Joomla\CMS\WebService\Operation\Attribute\ResourceOperations;
 use Joomla\Component\Fields\Administrator\Helper\FieldsHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -24,6 +25,7 @@ use Joomla\Component\Fields\Administrator\Helper\FieldsHelper;
  *
  * @since  4.0.0
  */
+#[ResourceOperations]
 class ArticlesController extends ApiController
 {
     /**
@@ -43,7 +45,7 @@ class ArticlesController extends ApiController
     protected $default_view = 'articles';
 
     /**
-     * Article list view amended to add filtering of data
+     * Article list view amended to add filtering of data.
      *
      * @return  static  A BaseController object to support chaining.
      *

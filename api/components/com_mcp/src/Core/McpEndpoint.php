@@ -1,0 +1,508 @@
+<?php
+
+/**
+ * @package         Joomla.MCP
+ * @subpackage      com_mcp
+ *
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+declare(strict_types=1);
+
+namespace Joomla\Component\MCP\Api\Core;
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
+
+use Joomla\CMS\Factory;
+use Joomla\CMS\Mcp\Resource\ResourceInterface;
+use Joomla\CMS\Mcp\Resource\ResourceResult;
+use Joomla\CMS\Mcp\Resource\ResourceTemplateInterface;
+use Joomla\CMS\Mcp\Tool\ToolInterface;
+use Joomla\CMS\Mcp\Tool\ToolResult;
+use Joomla\CMS\User\CurrentUserTrait;
+use Joomla\CMS\User\User;
+use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
+use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Stream;
+use Mcp\Server\HttpServerRunner;
+use Mcp\Server\McpServerException;
+use Mcp\Server\Server;
+use Mcp\Server\Transport\Http\BufferedIo;
+use Mcp\Server\Transport\Http\FileSessionStore;
+use Mcp\Server\Transport\Http\HttpMessage;
+use Mcp\Types\CallToolResult;
+use Mcp\Types\ListResourcesResult;
+use Mcp\Types\ListResourceTemplatesResult;
+use Mcp\Types\ListToolsResult;
+use Mcp\Types\ReadResourceResult;
+use Mcp\Types\Resource;
+use Mcp\Types\ResourceTemplate;
+use Mcp\Types\Tool;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
+/**
+ * MCP HTTP Endpoint for remote access
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+class McpEndpoint
+{
+    use CurrentUserTrait;
+
+    /**
+     * @since __DEPLOY_VERSION__
+     */
+    private LoggerInterface $logger;
+
+    /**
+     * Constructor.
+     *
+     * @param AbilityRegistry $abilityRegistry Ability registry
+     * @param array           $config          Configuration. Possible keys:
+     *                        - logger: Logger instance, defaults to NullLogger
+     *                        - server_name: Server name, defaults to 'Joomla MCP Server'
+     *                        - session_timeout: Session timeout in seconds, defaults to 1800
+     *                        - max_queue_size: Maximum queue size, defaults to 500
+     *                        - enable_sse: Enable Server-Sent Events, defaults to false
+     *                        - shared_hosting: Enable shared hosting mode, defaults to false
+     *                        - tmp_dir: Temporary directory, defaults to JPATH_ROOT . '/tmp'
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function __construct(
+        private readonly AbilityRegistry $abilityRegistry,
+        private readonly AuthServiceInterface $authService,
+        private readonly array $config = []
+    ) {
+        $this->logger = $this->config['logger'] ?? new NullLogger();
+    }
+
+    /**
+     * Invoke the endpoint
+     *
+     * @param HttpMessage $request
+     * @return ResponseInterface
+     * @since  __DEPLOY_VERSION__
+     */
+    public function handle(HttpMessage $request): ResponseInterface
+    {
+        try {
+            $headers     = $request->getHeaders();
+            $queryParams = $request->getQueryParams();
+
+            $this->logger->debug("MCP: Request method: " . $request->getMethod());
+            // Redact the Authorization header before logging.
+            $loggableHeaders = $headers;
+
+            foreach (array_keys($loggableHeaders) as $name) {
+                if (strcasecmp((string) $name, 'Authorization') === 0) {
+                    $loggableHeaders[$name] = '***';
+                }
+            }
+
+            $this->logger->debug("MCP: Request headers: " . json_encode($loggableHeaders));
+            $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
+
+            // Authenticate via the Authorization: Bearer header
+            $token = $this->extractToken($request);
+
+            if (!$token) {
+                $this->logger->error("MCP: No token found in Authorization header");
+
+                return $this->createUnauthorizedResponse('Missing authentication token');
+            }
+
+            $this->logger->debug("MCP: Token received");
+
+            $tokenInfo = $this->authService->validateToken($token);
+
+            if ($tokenInfo === null) {
+                $this->logger->error("MCP: Token validation failed");
+
+                return $this->createUnauthorizedResponse('Invalid or expired token');
+            }
+
+            $this->logger->info("MCP: Token validation successful for user: " . $tokenInfo->userid);
+            $user = new User($tokenInfo->userid);
+            $this->setCurrentUser($user);
+            Factory::getApplication()->loadIdentity($user);
+
+            $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
+
+            // Register handlers
+            $this->registerAbilities($server, $this->abilityRegistry);
+
+            // Configure HTTP options
+            $httpOptions = [
+                'session_timeout' => $this->config['session_timeout'] ?? 1800, // 30 minutes
+                'max_queue_size'  => $this->config['max_queue_size'] ?? 500,
+                'enable_sse'      => $this->config['enable_sse'] ?? false,
+                'shared_hosting'  => $this->config['shared_hosting'] ?? false,
+            ];
+
+            $sessionStore = new FileSessionStore(
+                ($this->config['tmp_dir'] ?? JPATH_ROOT . '/tmp') . '/mcp_sessions'
+            );
+
+            // The SDK would normally write status, headers and body directly to PHP's
+            // output (header(), echo). BufferedIo captures the writes in memory so
+            // we can return a proper response object to the controller instead.
+            $io = new BufferedIo();
+
+            $runner = new HttpServerRunner(
+                $server,
+                $server->createInitializationOptions(),
+                $httpOptions,
+                null,
+                $sessionStore,
+                $io
+            );
+
+            // Suppress warnings/notices from MCP SDK to prevent deprecation issues
+            $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+
+            try {
+                $response = $runner->handleRequest($request);
+                $runner->sendResponse($response);
+            } finally {
+                // Restore error reporting
+                error_reporting($oldErrorReporting);
+            }
+
+            // Forward the captured transport headers (Mcp-Session-Id, Content-Type, ...)
+            $responseHeaders = [];
+
+            foreach ($io->headers as [$name, $value]) {
+                $responseHeaders[$name][] = $value;
+            }
+
+            // Pass the SDK output through byte-for-byte: a decode/re-encode round-trip
+            // would turn empty JSON objects ({}) into empty arrays ([])
+            $body = new Stream('php://temp', 'wb+');
+            $body->write($io->buffer);
+            $body->rewind();
+
+            return new Response($body, $io->status ?? 200, $responseHeaders);
+        } catch (\Throwable $e) {
+            // Log the detail; return a generic message unless in debug mode.
+            $this->logger->error('MCP: Unhandled exception: ' . $e->getMessage());
+
+            $message = $this->isDebug()
+                ? $e->getMessage()
+                : 'An internal error occurred while handling the MCP request.';
+
+            return new JsonResponse([
+                'error'   => 'Internal Server Error',
+                'message' => $message,
+            ], 500);
+        }
+    }
+
+    /**
+     * Whether the application is running in debug mode
+     *
+     * @return  boolean
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function isDebug(): bool
+    {
+        try {
+            return (bool) Factory::getApplication()->get('debug');
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Register MCP handlers
+     *
+     * @param Server          $server          Server instance
+     * @param AbilityRegistry $abilityRegistry Ability registry
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry): void
+    {
+        // Register tool/list handler
+        $server->registerHandler('tools/list', function () use ($abilityRegistry) {
+            return $this->toListToolsResult($abilityRegistry->getTools());
+        });
+
+        // Register tool/call handler
+        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
+            $toolName  = $params->name;
+            $arguments = $params->arguments;
+
+            try {
+                $tool = $abilityRegistry->getTool($toolName);
+            } catch (AbilityNotFoundException) {
+                throw McpServerException::unknownTool($toolName);
+            }
+
+            return $this->toCallToolResult($tool->execute($arguments));
+        });
+
+        // Register resources/list handler
+        $server->registerHandler('resources/list', function () use ($abilityRegistry) {
+            return $this->toListResourcesResult($abilityRegistry->getResources());
+        });
+
+        // Register resources/read handler
+        $server->registerHandler('resources/read', function ($params) use ($server, $abilityRegistry) {
+            try {
+                $resource = $abilityRegistry->getResource($params->uri);
+            } catch (AbilityNotFoundException) {
+                $modern = $server->getSession()?->clientSupportsFeature('resource_not_found_invalid_params') ?? false;
+                throw McpServerException::unknownResource($params->uri, $modern);
+            }
+
+            return $this->toReadResourceResult($resource->read());
+        });
+
+        // Register resources/templates/list handler
+        $server->registerHandler('resources/templates/list', function () use ($abilityRegistry) {
+            return $this->toListResourceTemplatesResult($abilityRegistry->getResourceTemplates());
+        });
+    }
+
+
+    /**
+     * Convert a tool result to the SDK wire format
+     *
+     * @param ToolResult $result The tool result
+     *
+     * @return  CallToolResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toCallToolResult(ToolResult $result): CallToolResult
+    {
+        $data = [
+            'content' => array_map(static fn ($item) => $item->toArray(), $result->getContent()),
+            'isError' => $result->isError(),
+        ];
+
+        // Omit the key entirely when unset: the SDK distinguishes absent from explicit null
+        if ($result->getStructuredContent() !== null) {
+            $data['structuredContent'] = $result->getStructuredContent();
+        }
+
+        return CallToolResult::fromResponseData($data);
+    }
+
+    /**
+     * Convert a resource result to the SDK wire format
+     *
+     * @param ResourceResult $result The resource result
+     *
+     * @return  ReadResourceResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toReadResourceResult(ResourceResult $result): ReadResourceResult
+    {
+        return ReadResourceResult::fromResponseData(
+            ['contents' => array_map(static fn ($item) => $item->toArray(), $result->getContents())]
+        );
+    }
+
+
+    /**
+     * Convert registered tools to the SDK wire format
+     *
+     * @param ToolInterface[] $tools The registered tools
+     *
+     * @return  ListToolsResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListToolsResult(array $tools): ListToolsResult
+    {
+        $definitions = [];
+
+        foreach ($tools as $tool) {
+            $definition = [
+                'name' => $tool->getName(),
+                // Spread the entire schema (description, inputSchema, annotations)
+                ...$tool->getSchema(),
+            ];
+
+            // Validate each entry through the SDK so one invalid tool cannot fail the whole list.
+            try {
+                Tool::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf('MCP: Skipping invalid tool (name="%s"): %s', $tool->getName(), $e->getMessage())
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
+        }
+
+        return ListToolsResult::fromResponseData(['tools' => $definitions]);
+    }
+
+    /**
+     * Convert registered resources to the SDK wire format
+     *
+     * @param ResourceInterface[] $resources The registered resources
+     *
+     * @return  ListResourcesResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListResourcesResult(array $resources): ListResourcesResult
+    {
+        $definitions = [];
+
+        foreach ($resources as $resource) {
+            $definition = [
+                'uri'         => $resource->getUri(),
+                'name'        => $resource->getName(),
+                'title'       => $resource->getTitle(),
+                'description' => $resource->getDescription(),
+                'mimeType'    => $resource->getMimeType(),
+            ];
+
+            // Validate each entry through the SDK so one invalid resource cannot fail the whole list.
+            try {
+                Resource::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource (uri="%s", name="%s"): %s',
+                        $resource->getUri(),
+                        $resource->getName(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
+        }
+
+        return ListResourcesResult::fromResponseData(['resources' => $definitions]);
+    }
+
+    /**
+     * Convert registered resource templates to the SDK wire format
+     *
+     * @param ResourceTemplateInterface[] $templates The registered resource templates
+     *
+     * @return  ListResourceTemplatesResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListResourceTemplatesResult(array $templates): ListResourceTemplatesResult
+    {
+        $definitions = [];
+
+        foreach ($templates as $template) {
+            $definition = [
+                'name'        => $template->getName(),
+                'uriTemplate' => $template->getUriTemplate(),
+                'title'       => $template->getTitle(),
+                'description' => $template->getDescription(),
+                'mimeType'    => $template->getMimeType(),
+            ];
+
+            // Validate each entry through the SDK so one invalid template cannot fail the whole list.
+            try {
+                ResourceTemplate::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf(
+                        'MCP: Skipping invalid resource template (name="%s", uriTemplate="%s"): %s',
+                        $template->getName(),
+                        $template->getUriTemplate(),
+                        $e->getMessage()
+                    )
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
+        }
+
+        return ListResourceTemplatesResult::fromResponseData(['resourceTemplates' => $definitions]);
+    }
+
+    /**
+     * Extract the bearer token from the request's Authorization header
+     *
+     * @param HttpMessage $request Request object
+     *
+     * @return  string|null  Token string or null if not found
+     * @since   __DEPLOY_VERSION__
+     */
+    private function extractToken(HttpMessage $request): ?string
+    {
+        // Try Authorization header first (preferred method)
+        $authHeader = $request->getHeader('Authorization') ?? '';
+
+        // Try HTTP_AUTHORIZATION from the server environment
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        }
+
+        /**
+         * Apache-specific fix: mod_php does not expose the Authorization header in the
+         * environment, only via apache_request_headers().
+         * See https://github.com/symfony/symfony/issues/19693 and the same handling in
+         * plg_api-authentication_token.
+         */
+        if (
+            empty($authHeader) && \PHP_SAPI === 'apache2handler'
+            && \function_exists('apache_request_headers') && apache_request_headers() !== false
+        ) {
+            $apacheHeaders = array_change_key_case(apache_request_headers());
+
+            if (\array_key_exists('authorization', $apacheHeaders)) {
+                $authHeader = $apacheHeaders['authorization'];
+            }
+        }
+
+        // Another Apache-specific fix (mod_rewrite/CGI setups pass the header only as
+        // REDIRECT_HTTP_AUTHORIZATION). See https://github.com/symfony/symfony/issues/1813
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        }
+
+        if (preg_match('/Bearer\s+(\S+)/', $authHeader, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    /**
+     * Create an unauthorized response
+     *
+     * @param string $message Error message
+     *
+     * @return  ResponseInterface  Response object
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createUnauthorizedResponse(string $message): ResponseInterface
+    {
+        return new JsonResponse([
+            'error'   => 'Unauthorized',
+            'message' => $message,
+        ], 401);
+    }
+}

@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @package         Joomla.MCP
+ * @subpackage      com_mcp
+ *
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+declare(strict_types=1);
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
+
+use Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface;
+use Joomla\CMS\Extension\ComponentInterface;
+use Joomla\CMS\Extension\MVCComponent;
+use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
+use Joomla\CMS\Extension\Service\Provider\MVCFactory;
+use Joomla\CMS\Factory;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\Component\MCP\Api\Auth\StaticTokenAuthService;
+use Joomla\DI\Container;
+use Joomla\DI\ServiceProviderInterface;
+
+/**
+ * The MCP service provider.
+ *
+ * @since  __DEPLOY_VERSION__
+ */
+return new class () implements ServiceProviderInterface {
+    /**
+     * Registers the service provider with a DI container.
+     *
+     * @param  Container  $container  The DI container.
+     *
+     * @return  void
+     *
+     * @since  __DEPLOY_VERSION__
+     */
+    public function register(Container $container): void
+    {
+        $container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\MCP'));
+        $container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\MCP'));
+
+        $container->set(
+            ComponentInterface::class,
+            function (Container $container) {
+                $mvcFactory       = $container->get(MVCFactoryInterface::class);
+                $accessTokenModel = $mvcFactory->createModel('Mcp', 'Administrator');
+                Factory::$application->set('mcp.authService', new StaticTokenAuthService($accessTokenModel));
+                $component = new MVCComponent($container->get(ComponentDispatcherFactoryInterface::class));
+                $component->setMVCFactory($mvcFactory);
+
+                return $component;
+            }
+        );
+    }
+};
