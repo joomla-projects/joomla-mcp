@@ -17,6 +17,8 @@ class PurgeCache implements ToolInterface
     public function getSchema(): array
     {
         return [
+            "title"       => Text::_('PLG_MCP_JOOMLA_PURGE_CACHE_TITLE'),
+            "description" => Text::_('PLG_MCP_JOOMLA_PURGE_CACHE_DESC'),
             "inputSchema" => [
                 "type" => "object",
             ],
