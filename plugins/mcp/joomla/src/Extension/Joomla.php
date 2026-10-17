@@ -16,6 +16,7 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
 use Joomla\Component\Content\Api\Controller\ArticlesController;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Plugin\MCP\Joomla\Prompt\SiteHealthCheck;
 use Joomla\Plugin\MCP\Joomla\Resource\ApplicationConfig;
 use Joomla\Plugin\MCP\Joomla\Resource\SysInfo;
 use Joomla\Plugin\MCP\Joomla\Tool\PurgeCache\PurgeCache;
@@ -55,6 +56,9 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
         $event->addAbility(
             new ResourceReadTool($sysInfo, 'getSysInfo', Text::_('PLG_MCP_JOOMLA_SYSINFO_TOOL_DESC'))
         );
+
+        // Uses the getSysInfo and getApplicationConfig tools registered above
+        $event->addAbility(new SiteHealthCheck());
 
         $provider = new WebserviceToolProvider(
             new OperationCompiler(),
