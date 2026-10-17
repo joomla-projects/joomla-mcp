@@ -77,13 +77,21 @@ class McpconfigField extends FormField
             $serverName          = $sanitizedHostname . '-' . $sanitizedClientName;
         }
 
+        // Protocol era as used by the MCP Inspector: legacy (default), auto or modern
+        $protocolEra = (string) $form->getValue('protocol_era', 'params', 'legacy');
+
+        if (!\in_array($protocolEra, ['legacy', 'auto', 'modern'], true)) {
+            $protocolEra = 'legacy';
+        }
+
         // Build configuration array
         $config = [
             'mcpServers' => [
                 $serverName => [
-                    'type'    => 'streamable-http',
-                    'url'     => $baseUrl . '/api/index.php/v1/mcp',
-                    'headers' => [
+                    'type'        => 'streamable-http',
+                    'url'         => $baseUrl . '/api/index.php/v1/mcp',
+                    'protocolEra' => $protocolEra,
+                    'headers'     => [
                         'Authorization' => 'Bearer ' . $clientToken,
                     ],
                     'note' => 'For Streamable HTTP connections, add this URL directly in your MCP Client',
