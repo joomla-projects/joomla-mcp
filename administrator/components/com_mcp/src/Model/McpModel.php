@@ -62,8 +62,8 @@ class McpModel extends AdminModel
     /**
      * Method to get a single record.
      *
-     * Adds the derived client token as display_token; the stored seed in client_token
-     * is not part of the form.
+     * Replaces the stored seed in client_token with the derived client token, so the
+     * form shows the token to use and the seed never reaches the browser.
      *
      * @param   integer  $pk  The id of the primary key.
      *
@@ -76,10 +76,36 @@ class McpModel extends AdminModel
         $item = parent::getItem($pk);
 
         if ($item && !empty($item->id) && !empty($item->client_token)) {
-            $item->display_token = TokenHelper::buildToken((int) $item->id, $item->client_token);
+            $item->client_token = TokenHelper::buildToken((int) $item->id, $item->client_token);
         }
 
         return $item;
+    }
+
+    /**
+     * Method to validate the form data.
+     *
+     * The client_token field only displays the derived token; it is dropped here so a
+     * form save never overwrites the stored seed. The seed is written by
+     * McpTable::check() and McpController::regenerateToken() only.
+     *
+     * @param   \Joomla\CMS\Form\Form  $form   The form to validate against.
+     * @param   array                   $data   The data to validate.
+     * @param   string                  $group  The name of the field group to validate.
+     *
+     * @return  array|boolean  Array of filtered data if valid, false otherwise.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function validate($form, $data, $group = null)
+    {
+        $data = parent::validate($form, $data, $group);
+
+        if (\is_array($data)) {
+            unset($data['client_token']);
+        }
+
+        return $data;
     }
 
     /**

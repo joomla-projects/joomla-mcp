@@ -42,9 +42,9 @@ class McpconfigField extends FormField
      */
     protected function getInput()
     {
-        // Get the client token derived by McpModel::getItem()
+        // Get the client token from the form (derived from the seed by McpModel::getItem())
         $form        = $this->form;
-        $clientToken = $form->getValue('display_token');
+        $clientToken = $form->getValue('client_token');
         $clientName  = $form->getValue('client_name');
 
         if (empty($clientToken)) {
