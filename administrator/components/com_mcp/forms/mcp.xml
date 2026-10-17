@@ -15,7 +15,7 @@
 		/>
 
 		<field
-			name="client_token"
+			name="display_token"
 			type="text"
 			label="COM_MCP_FIELD_CLIENT_TOKEN_LABEL"
 			readonly="true"

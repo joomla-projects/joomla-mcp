@@ -8,10 +8,10 @@ namespace Joomla\Component\MCP\Administrator\Table;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Versioning\VersionableTableInterface;
+use Joomla\Component\MCP\Administrator\Helper\TokenHelper;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Registry\Registry;
 
@@ -191,7 +191,7 @@ class McpTable extends Table implements VersionableTableInterface
             }
 
             if (empty($this->client_token)) {
-                $this->client_token = ApplicationHelper::getHash(microtime() . $user->id);
+                $this->client_token = TokenHelper::generateSeed();
             }
 
             if (!(int) $this->created) {
