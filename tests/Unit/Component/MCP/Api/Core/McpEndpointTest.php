@@ -10,6 +10,8 @@
 
 namespace Joomla\Tests\Unit\Component\MCP\Api\Core;
 
+use Joomla\CMS\MCP\Prompt\PromptInterface;
+use Joomla\CMS\MCP\Prompt\PromptResult;
 use Joomla\CMS\MCP\Resource\ResourceInterface;
 use Joomla\CMS\MCP\Resource\ResourceResult;
 use Joomla\CMS\MCP\Resource\ResourceTemplateInterface;
@@ -19,7 +21,13 @@ use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
 use Joomla\Tests\Unit\UnitTestCase;
+use Mcp\Server\McpServerException;
+use Mcp\Server\NotificationOptions;
+use Mcp\Server\Server;
 use Mcp\Server\Transport\Http\HttpMessage;
+use Mcp\Shared\McpError;
+use Mcp\Types\GetPromptRequestParams;
+use Mcp\Types\PromptArguments;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -421,6 +429,197 @@ class McpEndpointTest extends UnitTestCase
         $this->assertCount(1, $wire['resources']);
         $this->assertSame('joomla://config', $wire['resources'][0]['uri']);
         $this->assertSame('config', $wire['resources'][0]['name']);
+    }
+
+    /**
+     * Without registered prompts the prompt handlers are not registered, so the server
+     * does not advertise the prompts capability and prompts/list stays "method not found".
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsCapabilityIsOmittedWithoutPrompts(): void
+    {
+        $server = $this->createServerWithPrompts([]);
+
+        $this->assertArrayNotHasKey('prompts/list', $server->getHandlers());
+        $this->assertArrayNotHasKey('prompts/get', $server->getHandlers());
+        $this->assertNull($server->getCapabilities(new NotificationOptions(), [])->prompts);
+    }
+
+    /**
+     * Registered prompts enable the prompt handlers and the prompts capability.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsCapabilityIsAdvertisedWithPrompts(): void
+    {
+        $server = $this->createServerWithPrompts([$this->createPrompt('summarise')]);
+
+        $this->assertArrayHasKey('prompts/list', $server->getHandlers());
+        $this->assertArrayHasKey('prompts/get', $server->getHandlers());
+        $this->assertNotNull($server->getCapabilities(new NotificationOptions(), [])->prompts);
+    }
+
+    /**
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsListReturnsDefinitions(): void
+    {
+        $server = $this->createServerWithPrompts([$this->createPrompt('summarise')]);
+
+        $wire = json_decode(json_encode($server->getHandlers()['prompts/list'](null)), true);
+
+        $this->assertSame(
+            [
+                [
+                    'name'        => 'summarise',
+                    'description' => 'Summarise an article',
+                    'title'       => 'Summarise',
+                    'arguments'   => [['name' => 'id', 'description' => 'Article ID', 'required' => true]],
+                ],
+            ],
+            $wire['prompts']
+        );
+    }
+
+    /**
+     * prompts/get passes the client arguments to the prompt and returns its messages.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsGetReturnsMessages(): void
+    {
+        $server = $this->createServerWithPrompts([$this->createPrompt('summarise')]);
+
+        $result = $server->getHandlers()['prompts/get'](
+            new GetPromptRequestParams('summarise', new PromptArguments(['id' => '42']))
+        );
+
+        $this->assertSame(
+            [
+                'messages'    => [['role' => 'user', 'content' => ['type' => 'text', 'text' => 'Summarise article 42']]],
+                'description' => 'Summary of article 42',
+            ],
+            json_decode(json_encode($result), true)
+        );
+    }
+
+    /**
+     * A missing required argument is answered with JSON-RPC "invalid params".
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsGetRejectsMissingRequiredArgument(): void
+    {
+        $server = $this->createServerWithPrompts([$this->createPrompt('summarise')]);
+
+        try {
+            $server->getHandlers()['prompts/get'](new GetPromptRequestParams('summarise'));
+            $this->fail('Expected McpError for the missing required argument');
+        } catch (McpError $e) {
+            $this->assertSame(-32602, $e->error->code);
+            $this->assertStringContainsString('"id"', $e->error->message);
+        }
+    }
+
+    /**
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testPromptsGetRejectsUnknownPrompt(): void
+    {
+        $server = $this->createServerWithPrompts([$this->createPrompt('summarise')]);
+
+        $this->expectException(McpServerException::class);
+
+        $server->getHandlers()['prompts/get'](new GetPromptRequestParams('unknown'));
+    }
+
+    /**
+     * A single prompt with an empty name is skipped so it cannot break prompts/list.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testInvalidPromptIsSkipped(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning');
+
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class),
+            ['logger' => $logger]
+        );
+
+        $converted = (new \ReflectionMethod(McpEndpoint::class, 'toListPromptsResult'))
+            ->invoke($endpoint, [$this->createPrompt('summarise'), $this->createPrompt('')]);
+
+        $wire = json_decode(json_encode($converted), true);
+
+        $this->assertCount(1, $wire['prompts']);
+        $this->assertSame('summarise', $wire['prompts'][0]['name']);
+    }
+
+    /**
+     * Register the endpoint handlers for the given prompts on a fresh server
+     *
+     * @param PromptInterface[] $prompts  The prompts to register
+     *
+     * @return  Server
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createServerWithPrompts(array $prompts): Server
+    {
+        $registry = new AbilityRegistry();
+
+        foreach ($prompts as $prompt) {
+            $registry->addAbility($prompt);
+        }
+
+        $endpoint = new McpEndpoint($registry, $this->createMock(AuthServiceInterface::class));
+        $server   = new Server('test');
+
+        (new \ReflectionMethod(McpEndpoint::class, 'registerAbilities'))->invoke($endpoint, $server, $registry);
+
+        return $server;
+    }
+
+    /**
+     * Build a prompt stub with one required "id" argument.
+     *
+     * @param string $name  The prompt name
+     *
+     * @return  PromptInterface
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createPrompt(string $name): PromptInterface
+    {
+        $prompt = $this->createMock(PromptInterface::class);
+        $prompt->method('getName')->willReturn($name);
+        $prompt->method('getTitle')->willReturn('Summarise');
+        $prompt->method('getDescription')->willReturn('Summarise an article');
+        $prompt->method('getArguments')->willReturn([['name' => 'id', 'description' => 'Article ID', 'required' => true]]);
+        $prompt->method('getMessages')->willReturnCallback(
+            static fn (array $arguments) => PromptResult::text('Summarise article ' . $arguments['id'])
+                ->withDescription('Summary of article ' . $arguments['id'])
+        );
+
+        return $prompt;
     }
 
     /**
