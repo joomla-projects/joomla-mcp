@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<help key="MCP:_Options"/>
+	<inlinehelp button="show"/>
+	<fieldset name="permissions"
+			  label="JCONFIG_PERMISSIONS_LABEL"
+	>
+
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			filter="rules"
+			validate="rules"
+			component="com_mcp"
+			section="component"
+		/>
+
+	</fieldset>
+</config>
