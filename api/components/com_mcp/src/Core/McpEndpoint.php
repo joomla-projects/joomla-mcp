@@ -17,6 +17,8 @@ namespace Joomla\Component\MCP\Api\Core;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\MCP\Prompt\PromptInterface;
+use Joomla\CMS\MCP\Prompt\PromptResult;
 use Joomla\CMS\MCP\Resource\ResourceInterface;
 use Joomla\CMS\MCP\Resource\ResourceResult;
 use Joomla\CMS\MCP\Resource\ResourceTemplateInterface;
@@ -35,10 +37,16 @@ use Mcp\Server\Server;
 use Mcp\Server\Transport\Http\BufferedIo;
 use Mcp\Server\Transport\Http\FileSessionStore;
 use Mcp\Server\Transport\Http\HttpMessage;
+use Mcp\Shared\ErrorData;
+use Mcp\Shared\McpError;
 use Mcp\Types\CallToolResult;
+use Mcp\Types\GetPromptResult;
+use Mcp\Types\ListPromptsResult;
 use Mcp\Types\ListResourcesResult;
 use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ListToolsResult;
+use Mcp\Types\Prompt;
+use Mcp\Types\PromptArguments;
 use Mcp\Types\ReadResourceResult;
 use Mcp\Types\Resource;
 use Mcp\Types\ResourceTemplate;
@@ -274,6 +282,118 @@ class McpEndpoint
         $server->registerHandler('resources/templates/list', function () use ($abilityRegistry) {
             return $this->toListResourceTemplatesResult($abilityRegistry->getResourceTemplates());
         });
+
+        // The SDK derives the prompts capability from the registered handlers,
+        // so only register them when there are prompts to offer.
+        if ($abilityRegistry->getPrompts() === []) {
+            return;
+        }
+
+        // Register prompts/list handler
+        $server->registerHandler('prompts/list', function () use ($abilityRegistry) {
+            return $this->toListPromptsResult($abilityRegistry->getPrompts());
+        });
+
+        // Register prompts/get handler
+        $server->registerHandler('prompts/get', function ($params) use ($abilityRegistry) {
+            try {
+                $prompt = $abilityRegistry->getPrompt($params->name);
+            } catch (AbilityNotFoundException) {
+                throw McpServerException::unknownPrompt($params->name);
+            }
+
+            $arguments = $this->toPromptArguments($params->arguments ?? null);
+
+            foreach ($prompt->getArguments() as $argument) {
+                if (!empty($argument['required']) && !isset($arguments[$argument['name']])) {
+                    throw new McpError(new ErrorData(
+                        code: -32602,
+                        message: \sprintf('Missing required argument "%s" for prompt "%s"', $argument['name'], $params->name)
+                    ));
+                }
+            }
+
+            return $this->toGetPromptResult($prompt->getMessages($arguments));
+        });
+    }
+
+    /**
+     * Normalise the prompt arguments sent by the client to a plain array
+     *
+     * @param mixed $arguments The arguments as decoded by the SDK
+     *
+     * @return  array<string, string>
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toPromptArguments(mixed $arguments): array
+    {
+        return match (true) {
+            $arguments instanceof PromptArguments => $arguments->getExtraFields(),
+            $arguments instanceof \stdClass       => get_object_vars($arguments),
+            \is_array($arguments)                 => $arguments,
+            default                               => [],
+        };
+    }
+
+    /**
+     * Convert a prompt result to the SDK wire format
+     *
+     * @param PromptResult $result The prompt result
+     *
+     * @return  GetPromptResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toGetPromptResult(PromptResult $result): GetPromptResult
+    {
+        $data = [
+            'messages' => array_map(static fn ($message) => $message->toArray(), $result->getMessages()),
+        ];
+
+        if ($result->getDescription() !== null) {
+            $data['description'] = $result->getDescription();
+        }
+
+        return GetPromptResult::fromResponseData($data);
+    }
+
+    /**
+     * Convert registered prompts to the SDK wire format
+     *
+     * @param PromptInterface[] $prompts The registered prompts
+     *
+     * @return  ListPromptsResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function toListPromptsResult(array $prompts): ListPromptsResult
+    {
+        $definitions = [];
+
+        foreach ($prompts as $prompt) {
+            $definition = [
+                'name'        => $prompt->getName(),
+                'title'       => $prompt->getTitle(),
+                'description' => $prompt->getDescription(),
+                'arguments'   => $prompt->getArguments(),
+            ];
+
+            // Validate each entry through the SDK so one invalid prompt cannot fail the whole list.
+            try {
+                Prompt::fromArray($definition)->validate();
+            } catch (\InvalidArgumentException $e) {
+                $this->logger->warning(
+                    \sprintf('MCP: Skipping invalid prompt (name="%s"): %s', $prompt->getName(), $e->getMessage())
+                );
+
+                continue;
+            }
+
+            $definitions[] = $definition;
+        }
+
+        return ListPromptsResult::fromResponseData(['prompts' => $definitions]);
     }
 
 

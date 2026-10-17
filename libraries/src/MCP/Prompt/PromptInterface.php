@@ -50,9 +50,25 @@ interface PromptInterface
     /**
      * Get the prompt arguments
      *
-     * @return  array
+     * Each argument is an array in the MCP wire format with the keys "name", and optionally
+     * "description" and "required", e.g. ['name' => 'id', 'description' => 'Article ID', 'required' => true].
+     *
+     * @return  array[]
      *
      * @since   __DEPLOY_VERSION__
      */
     public function getArguments(): array;
+
+    /**
+     * Get the prompt messages for the given arguments
+     *
+     * Required arguments are checked by the endpoint before this method is called.
+     *
+     * @param   array<string, string>  $arguments  The prompt arguments
+     *
+     * @return  PromptResult
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function getMessages(array $arguments): PromptResult;
 }
