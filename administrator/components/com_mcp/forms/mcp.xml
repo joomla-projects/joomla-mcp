@@ -22,6 +22,21 @@
 			class="readonly font-monospace"
 		/>
 
+		<fields name="params">
+			<field
+				name="protocol_era"
+				type="list"
+				label="COM_MCP_FIELD_PROTOCOL_ERA_LABEL"
+				description="COM_MCP_FIELD_PROTOCOL_ERA_DESC"
+				default="legacy"
+				validate="options"
+				>
+				<option value="legacy">COM_MCP_FIELD_PROTOCOL_ERA_LEGACY</option>
+				<option value="auto">COM_MCP_FIELD_PROTOCOL_ERA_AUTO</option>
+				<option value="modern">COM_MCP_FIELD_PROTOCOL_ERA_MODERN</option>
+			</field>
+		</fields>
+
 		<field
 			name="claude_code_cli"
 			type="mcpconfig"
