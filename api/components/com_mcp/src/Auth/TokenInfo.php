@@ -16,6 +16,8 @@ namespace Joomla\Component\MCP\Api\Auth;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\Registry\Registry;
+
 class TokenInfo
 {
     public int $pid;
@@ -30,6 +32,15 @@ class TokenInfo
     public string $last_used_ip;
 
     /**
+     * @param   Registry  $params  Client parameters.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function __construct(public Registry $params = new Registry())
+    {
+    }
+
+    /**
      * Create a token info object from an array
      *
      * @param array $data
@@ -38,7 +49,7 @@ class TokenInfo
      */
     public static function fromArray(array $data): self
     {
-        $tokenInfo               = new self();
+        $tokenInfo               = new self(new Registry($data['params'] ?? []));
         $tokenInfo->pid          = $data['pid'] ?? 0;
         $tokenInfo->tstamp       = new \DateTime($data['tstamp'] ?? 'now');
         $tokenInfo->crdate       = new \DateTime($data['crdate'] ?? 'now');

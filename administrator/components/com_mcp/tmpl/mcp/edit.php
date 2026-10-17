@@ -44,6 +44,13 @@ HTMLHelper::_('behavior.keepalive');
         </div>
         <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
+        <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'tools', Text::_('COM_MCP_FIELDSET_TOOLS')); ?>
+        <fieldset id="fieldset-tools" class="options-form">
+            <legend><?php echo Text::_('COM_MCP_FIELDSET_TOOLS'); ?></legend>
+            <?php echo $this->form->renderFieldset('tools'); ?>
+        </fieldset>
+        <?php echo HTMLHelper::_('uitab.endTab'); ?>
+
         <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'publishing', Text::_('JGLOBAL_FIELDSET_PUBLISHING')); ?>
         <div class="row">
             <div class="col-md-12">

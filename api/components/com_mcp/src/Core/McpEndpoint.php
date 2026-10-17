@@ -26,6 +26,7 @@ use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Exception\AbilityNotFoundException;
+use Joomla\Registry\Registry;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Stream;
@@ -138,7 +139,7 @@ class McpEndpoint
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
             // Register handlers
-            $this->registerAbilities($server, $this->abilityRegistry);
+            $this->registerAbilities($server, $this->abilityRegistry, $tokenInfo->params);
 
             // Configure HTTP options
             $httpOptions = [
@@ -227,22 +228,27 @@ class McpEndpoint
      *
      * @param Server          $server          Server instance
      * @param AbilityRegistry $abilityRegistry Ability registry
+     * @param Registry        $clientParams    Client parameters
      *
      * @return  void
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry): void
+    private function registerAbilities(Server $server, AbilityRegistry $abilityRegistry, Registry $clientParams = new Registry()): void
     {
         // Register tool/list handler
-        $server->registerHandler('tools/list', function () use ($abilityRegistry) {
-            return $this->toListToolsResult($abilityRegistry->getTools());
+        $server->registerHandler('tools/list', function () use ($abilityRegistry, $clientParams) {
+            return $this->toListToolsResult($abilityRegistry->getTools(), $clientParams);
         });
 
         // Register tool/call handler
-        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
+        $server->registerHandler('tools/call', function ($params) use ($abilityRegistry, $clientParams) {
             $toolName  = $params->name;
             $arguments = $params->arguments;
+
+            if (!$this->allowsTool($toolName, $clientParams)) {
+                throw McpServerException::unknownTool($toolName);
+            }
 
             try {
                 $tool = $abilityRegistry->getTool($toolName);
@@ -321,22 +327,31 @@ class McpEndpoint
     /**
      * Convert registered tools to the SDK wire format
      *
-     * @param ToolInterface[] $tools The registered tools
+     * @param ToolInterface[] $tools        The registered tools
+     * @param Registry        $clientParams Client parameters
      *
      * @return  ListToolsResult
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function toListToolsResult(array $tools): ListToolsResult
+    private function toListToolsResult(array $tools, Registry $clientParams = new Registry()): ListToolsResult
     {
         $definitions = [];
 
         foreach ($tools as $tool) {
+            if (!$this->allowsTool($tool->getName(), $clientParams)) {
+                continue;
+            }
+
             $definition = [
-                'name' => $tool->getName(),
                 // Spread the entire schema (description, inputSchema, annotations)
                 ...$tool->getSchema(),
+                'name' => $tool->getName(),
             ];
+
+            if ($clientParams->get('exclude_descriptions', false)) {
+                unset($definition['description']);
+            }
 
             // Validate each entry through the SDK so one invalid tool cannot fail the whole list.
             try {
@@ -353,6 +368,37 @@ class McpEndpoint
         }
 
         return ListToolsResult::fromResponseData(['tools' => $definitions]);
+    }
+
+    /**
+     * Check whether a client may discover or execute a tool.
+     *
+     * @param string   $name         The registered tool name
+     * @param Registry $clientParams Client parameters
+     *
+     * @return  boolean
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function allowsTool(string $name, Registry $clientParams): bool
+    {
+        // Clients without saved settings retain their existing access.
+        $mode  = $clientParams->get('tools_mode', 'exclude');
+        $tools = $clientParams->get('tools', []);
+
+        if (!\in_array($mode, ['include', 'exclude'], true) || !\is_array($tools) || !array_is_list($tools)) {
+            return false;
+        }
+
+        foreach ($tools as $tool) {
+            if (!\is_string($tool) || $tool === '') {
+                return false;
+            }
+        }
+
+        $selected = \in_array($name, $tools, true);
+
+        return $mode === 'include' ? $selected : !$selected;
     }
 
     /**

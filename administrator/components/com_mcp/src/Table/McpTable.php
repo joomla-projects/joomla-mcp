@@ -63,6 +63,14 @@ class McpTable extends Table implements VersionableTableInterface
     public $capabilities = '';
 
     /**
+     * Client settings, decoded on load and encoded before saving.
+     *
+     * @var    array|string
+     * @since  __DEPLOY_VERSION__
+     */
+    public $params = '{}';
+
+    /**
      * @var int
      */
     public $state = 1;
@@ -144,13 +152,12 @@ class McpTable extends Table implements VersionableTableInterface
      */
     public function bind($src, $ignore = [])
     {
+        // Token regeneration does not submit settings; keep the loaded client configuration.
+        $src['params'] ??= $this->params;
+
         if (isset($src['params']) && \is_array($src['params'])) {
             $registry      = new Registry($src['params']);
             $src['params'] = (string) $registry;
-        }
-
-        if (!isset($src['params'])) {
-            $src['params'] = '{}';
         }
 
         foreach (['publish_up', 'publish_down', 'checked_out_time', 'reset', 'created', 'modified'] as $field) {

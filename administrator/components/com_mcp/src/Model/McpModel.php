@@ -75,6 +75,11 @@ class McpModel extends AdminModel
             return false;
         }
 
+        // Existing clients without tool settings retain access to all registered tools.
+        if ($form->getValue('id') && $form->getValue('tools_mode', 'params') === null) {
+            $form->setValue('tools_mode', 'params', 'exclude');
+        }
+
         return $form;
     }
 
