@@ -22,8 +22,9 @@ use Joomla\CMS\Factory;
  * Client token helper.
  *
  * Uses the same scheme as the core Joomla API Token: only a random seed is stored in
- * #__mcp.client_token, the token handed to the client is
- * base64_encode("algo:id:" . hash_hmac(algo, base64_decode(seed), site secret)).
+ * #__mcp.client_token, the token handed to the client is a derived token.
+ * Even if the stored seeds are leaked, i.e. through SQL injection, an attacker
+ * won't be able to get valid tokens from there as the site secret is missing.
  *
  * @since  __DEPLOY_VERSION__
  */
