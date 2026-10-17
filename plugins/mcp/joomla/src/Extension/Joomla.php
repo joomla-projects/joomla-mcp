@@ -11,6 +11,7 @@
 namespace Joomla\Plugin\MCP\Joomla\Extension;
 
 use Joomla\CMS\Event\MCP\InitialiseMCPServerEvent;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\WebService\Operation\OperationCompiler;
 use Joomla\Component\Content\Api\Controller\ArticlesController;
@@ -18,6 +19,7 @@ use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\MCP\Joomla\Resource\ApplicationConfig;
 use Joomla\Plugin\MCP\Joomla\Resource\SysInfo;
 use Joomla\Plugin\MCP\Joomla\Tool\PurgeCache\PurgeCache;
+use Joomla\Plugin\MCP\Joomla\Tool\ResourceRead\ResourceReadTool;
 use Joomla\Plugin\MCP\Joomla\Tool\WebserviceWrapper\Dispatcher\WebserviceDispatcher;
 use Joomla\Plugin\MCP\Joomla\Tool\WebserviceWrapper\WebserviceToolProvider;
 
@@ -39,9 +41,20 @@ final class Joomla extends CMSPlugin implements SubscriberInterface
     {
         $this->loadLanguage();
 
+        $applicationConfig = new ApplicationConfig();
+        $sysInfo           = new SysInfo();
+
         $event->addAbility(new PurgeCache());
-        $event->addAbility(new ApplicationConfig());
-        $event->addAbility(new SysInfo());
+        $event->addAbility($applicationConfig);
+        $event->addAbility($sysInfo);
+
+        // Read-only tool variants of the resources, for clients that do not read resources on their own
+        $event->addAbility(
+            new ResourceReadTool($applicationConfig, 'getApplicationConfig', Text::_('PLG_MCP_JOOMLA_APPLICATION_CONFIG_TOOL_DESC'))
+        );
+        $event->addAbility(
+            new ResourceReadTool($sysInfo, 'getSysInfo', Text::_('PLG_MCP_JOOMLA_SYSINFO_TOOL_DESC'))
+        );
 
         $provider = new WebserviceToolProvider(
             new OperationCompiler(),
