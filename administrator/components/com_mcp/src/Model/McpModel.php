@@ -10,6 +10,8 @@ namespace Joomla\Component\MCP\Administrator\Model;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\AdminModel;
+use Joomla\Component\MCP\Administrator\Helper\TokenHelper;
+use Joomla\Database\ParameterType;
 
 /**
  * MCP Model for a single record.
@@ -49,9 +51,59 @@ class McpModel extends AdminModel
         $data = $app->getUserState('com_mcp.edit.mcp.data', []);
 
         if (empty($data)) {
-            $data = $this->getItem();
+            // getItem() returns false for a record that does not exist
+            $data = $this->getItem() ?: [];
         }
         $this->preprocessData('com_mcp.mcp', $data);
+
+        return $data;
+    }
+
+    /**
+     * Method to get a single record.
+     *
+     * Replaces the stored seed in client_token with the derived client token, so the
+     * form shows the token to use and the seed never reaches the browser.
+     *
+     * @param   integer  $pk  The id of the primary key.
+     *
+     * @return  \stdClass|false  Object on success, false on failure.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function getItem($pk = null)
+    {
+        $item = parent::getItem($pk);
+
+        if ($item && !empty($item->id) && !empty($item->client_token)) {
+            $item->client_token = TokenHelper::buildToken((int) $item->id, $item->client_token);
+        }
+
+        return $item;
+    }
+
+    /**
+     * Method to validate the form data.
+     *
+     * The client_token field only displays the derived token; it is dropped here so a
+     * form save never overwrites the stored seed. The seed is written by
+     * McpTable::check() and McpController::regenerateToken() only.
+     *
+     * @param   \Joomla\CMS\Form\Form  $form   The form to validate against.
+     * @param   array                   $data   The data to validate.
+     * @param   string                  $group  The name of the field group to validate.
+     *
+     * @return  array|boolean  Array of filtered data if valid, false otherwise.
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function validate($form, $data, $group = null)
+    {
+        $data = parent::validate($form, $data, $group);
+
+        if (\is_array($data)) {
+            unset($data['client_token']);
+        }
 
         return $data;
     }
@@ -89,30 +141,20 @@ class McpModel extends AdminModel
      */
     public function getUserByToken($token): ?object
     {
-        if (empty($token)) {
+        if (empty($token) || !\is_string($token)) {
             return null;
         }
 
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true);
+        $result = $this->getByToken($token);
 
-        $query->select('*')
-            ->from($db->quoteName('#__mcp'))
-            ->where($db->quoteName('client_token') . ' = ' . $db->quote($token))
-            ->where($db->quoteName('state') . ' = 1');
-
-        $db->setQuery($query);
-
-        try {
-            $result = $db->loadObject();
-            return $result ?: null;
-        } catch (\RuntimeException $e) {
-            return null;
-        }
+        return $result ? (object) $result : null;
     }
 
     /**
      * Get an access token from the database by token
+     *
+     * The token is base64("algo:id:hmac"); the record is loaded by id and the HMAC is
+     * compared with the one derived from the stored seed and the site secret.
      *
      * @param string $token  The token to look up
      * @return array|null  The access token data or null if not found
@@ -120,20 +162,35 @@ class McpModel extends AdminModel
      */
     public function getByToken(string $token): ?array
     {
+        $parsed = TokenHelper::parseToken($token);
+
+        if ($parsed === null) {
+            return null;
+        }
+
         $db    = $this->getDatabase();
         $query = $db->createQuery();
         $query->select('*')
-            ->from('#__mcp')
-            ->where('client_token = ' . $db->quote($token))
-            ->where($db->quoteName('state') . ' = 1');
+            ->from($db->quoteName('#__mcp'))
+            ->where($db->quoteName('id') . ' = :id')
+            ->where($db->quoteName('state') . ' = 1')
+            ->bind(':id', $parsed['id'], ParameterType::INTEGER);
         $db->setQuery($query);
 
         try {
             $result = $db->loadAssoc();
-            return $result ?: null;
         } catch (\RuntimeException $e) {
             return null;
         }
+
+        if (!$result || !TokenHelper::verify($parsed['hmac'], (string) $result['client_token'], $parsed['algo'])) {
+            return null;
+        }
+
+        // Never hand the stored seed to callers
+        $result['client_token'] = $token;
+
+        return $result;
     }
 
     /**

@@ -10,6 +10,7 @@ namespace Joomla\Component\MCP\Administrator\View\Mcp;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
@@ -25,6 +26,10 @@ class HtmlView extends BaseHtmlView
         $this->form  = $model->getForm();
         $this->item  = $model->getItem();
         $this->state = $model->getState();
+
+        if ($this->item === false) {
+            throw new GenericDataException((string) $model->getError(), 404);
+        }
 
         $this->addToolbar();
 

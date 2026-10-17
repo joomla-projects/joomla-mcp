@@ -8,10 +8,10 @@ namespace Joomla\Component\MCP\Administrator\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
+use Joomla\Component\MCP\Administrator\Helper\TokenHelper;
 
 /**
  * MCP Controller for a single record.
@@ -59,13 +59,10 @@ class McpController extends FormController
             return;
         }
 
-        // Generate new token (same logic as in McpTable)
-        $newToken = ApplicationHelper::getHash(microtime() . $item->id);
-
-        // Update the token in the database
+        // Generate a new token seed; the client token is derived from it
         $data = [
             'id'           => $id,
-            'client_token' => $newToken,
+            'client_token' => TokenHelper::generateSeed(),
         ];
 
         if ($model->save($data)) {
