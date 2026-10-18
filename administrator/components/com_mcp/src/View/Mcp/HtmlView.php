@@ -8,7 +8,6 @@ namespace Joomla\Component\MCP\Administrator\View\Mcp;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -33,8 +32,6 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
-        $user = Factory::getApplication()->getIdentity();
-
         $isNew = ($this->item->id == 0);
         ToolbarHelper::title($isNew ? Text::_('COM_MCP_FORM_TITLE_NEW') : Text::_('COM_MCP_FORM_TITLE_EDIT'), 'cog');
 
@@ -50,8 +47,10 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::save('mcp.save');
         ToolbarHelper::cancel('mcp.cancel');
 
-        if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
-            ToolbarHelper::preferences('com_mcp');
+        $inlineHelp = $this->form->getXml()->config->inlinehelp;
+
+        if ($inlineHelp && (string) $inlineHelp['button'] === 'show') {
+            ToolbarHelper::inlinehelp((string) $inlineHelp['targetclass'] ?: 'hide-aware-inline-help');
         }
     }
 }

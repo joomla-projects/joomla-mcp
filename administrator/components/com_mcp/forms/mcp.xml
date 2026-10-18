@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form addfieldprefix="Joomla\Component\MCP\Administrator\Field">
+	<config>
+		<inlinehelp button="show"/>
+	</config>
 	<fieldset name="details">
 		<field
 			name="id"
@@ -11,6 +14,7 @@
 			name="client_name"
 			type="text"
 			label="COM_MCP_FIELD_CLIENT_NAME_LABEL"
+			description="COM_MCP_FIELD_CLIENT_NAME_DESCRIPTION"
 			required="true"
 		/>
 
@@ -18,6 +22,7 @@
 			name="client_token"
 			type="text"
 			label="COM_MCP_FIELD_CLIENT_TOKEN_LABEL"
+			description="COM_MCP_FIELD_CLIENT_TOKEN_DESC"
 			readonly="true"
 			class="readonly font-monospace"
 		/>
