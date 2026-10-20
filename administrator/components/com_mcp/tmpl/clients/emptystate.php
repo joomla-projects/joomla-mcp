@@ -14,11 +14,11 @@
 
 use Joomla\CMS\Layout\LayoutHelper;
 
-/** @var \Joomla\Component\MCP\Administrator\View\Mcps\HtmlView $this */
+/** @var \Joomla\Component\MCP\Administrator\View\Clients\HtmlView $this */
 
 $displayData = [
     'textPrefix' => 'COM_MCP',
-    'formURL'    => 'index.php?option=com_mcp&view=mcps',
+    'formURL'    => 'index.php?option=com_mcp&view=clients',
     'helpURL'    => '',
     'icon'       => 'icon-cog mcp',
 ];
@@ -26,7 +26,7 @@ $displayData = [
 $user = $this->getCurrentUser();
 
 if ($user->authorise('core.create', 'com_mcp')) {
-    $displayData['createURL'] = 'index.php?option=com_mcp&task=mcp.add';
+    $displayData['createURL'] = 'index.php?option=com_mcp&task=client.add';
 }
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);

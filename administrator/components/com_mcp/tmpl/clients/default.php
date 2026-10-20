@@ -18,7 +18,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
-/** @var \Joomla\Component\MCP\Administrator\View\Mcps\HtmlView $this */
+/** @var \Joomla\Component\MCP\Administrator\View\Clients\HtmlView $this */
 
 /** @var \Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->getDocument()->getWebAssetManager();
@@ -32,12 +32,12 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
 $saveOrder = $listOrder == 'a.ordering';
 
 if ($saveOrder && !empty($this->items)) {
-    $saveOrderingUrl = 'index.php?option=com_mcp&task=mcps.saveOrderAjax&tmpl=component&' . Session::getFormToken() . '=1';
+    $saveOrderingUrl = 'index.php?option=com_mcp&task=clients.saveOrderAjax&tmpl=component&' . Session::getFormToken() . '=1';
     HTMLHelper::_('draggablelist.draggable');
 }
 ?>
 
-<form action="<?php echo Route::_('index.php?option=com_mcp&view=mcps'); ?>" method="post" name="adminForm" id="adminForm">
+<form action="<?php echo Route::_('index.php?option=com_mcp&view=clients'); ?>" method="post" name="adminForm" id="adminForm">
     <div class="row">
         <div class="col-md-12">
             <div id="j-main-container" class="j-main-container">
@@ -107,13 +107,13 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php endif; ?>
                                 </td>
                                 <td class="small d-none d-md-table-cell">
-                                    <?php echo HTMLHelper::_('jgrid.published', $item->state, $i, 'mcps.', $canChange); ?>
+                                    <?php echo HTMLHelper::_('jgrid.published', $item->state, $i, 'clients.', $canChange); ?>
                                 </td>
                                 <td>
                                     <?php if ($item->checked_out) : ?>
-                                        <?php echo HTMLHelper::_('jgrid.checkedout', $i, $item->editor, $item->checked_out_time, 'mcps.', $canCheckin); ?>
+                                        <?php echo HTMLHelper::_('jgrid.checkedout', $i, $item->editor, $item->checked_out_time, 'clients.', $canCheckin); ?>
                                     <?php endif; ?>
-                                    <a href="<?php echo Route::_('index.php?option=com_mcp&task=mcp.edit&id=' . (int) $item->id); ?>">
+                                    <a href="<?php echo Route::_('index.php?option=com_mcp&task=client.edit&id=' . (int) $item->id); ?>">
                                         <?php echo $this->escape($item->client_name); ?>
                                     </a>
                                 </td>

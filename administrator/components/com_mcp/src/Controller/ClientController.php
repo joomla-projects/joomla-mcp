@@ -18,7 +18,7 @@ use Joomla\Component\MCP\Administrator\Helper\TokenHelper;
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpController extends FormController
+class ClientController extends FormController
 {
     /**
      * The default view for the list.
@@ -26,7 +26,7 @@ class McpController extends FormController
      * @var    string
      * @since  __DEPLOY_VERSION__
      */
-    protected $view_list = 'mcps';
+    protected $view_list = 'clients';
 
     /**
      * Method to regenerate the client token.
@@ -46,7 +46,7 @@ class McpController extends FormController
 
         if (!$id) {
             $app->enqueueMessage(Text::_('COM_MCP_ERROR_INVALID_ID'), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_mcp&view=mcps', false));
+            $this->setRedirect(Route::_('index.php?option=com_mcp&view=clients', false));
             return;
         }
 
@@ -55,7 +55,7 @@ class McpController extends FormController
 
         if (!$item || !$item->id) {
             $app->enqueueMessage(Text::_('COM_MCP_ERROR_ITEM_NOT_FOUND'), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_mcp&view=mcps', false));
+            $this->setRedirect(Route::_('index.php?option=com_mcp&view=clients', false));
             return;
         }
 
@@ -72,6 +72,6 @@ class McpController extends FormController
         }
 
         // Redirect back to the edit view
-        $this->setRedirect(Route::_('index.php?option=com_mcp&view=mcp&layout=edit&id=' . $id, false));
+        $this->setRedirect(Route::_('index.php?option=com_mcp&view=client&layout=edit&id=' . $id, false));
     }
 }
