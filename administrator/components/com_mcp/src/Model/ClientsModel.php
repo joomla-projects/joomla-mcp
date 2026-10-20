@@ -23,7 +23,7 @@ use Joomla\Database\QueryInterface;
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpsModel extends ListModel
+class ClientsModel extends ListModel
 {
     /**
      * Constructor.

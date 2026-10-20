@@ -31,5 +31,5 @@ class DisplayController extends BaseController
      * @var    string
      * @since  __DEPLOY_VERSION__
      */
-    protected $default_view = 'mcps';
+    protected $default_view = 'clients';
 }

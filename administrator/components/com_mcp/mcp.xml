@@ -21,7 +21,7 @@
 		</sql>
 	</uninstall>
 	<administration>
-		<menu img="class:bookmark">COM_MCP</menu>
+		<menu link="option=com_mcp&amp;view=clients" img="class:bookmark">COM_MCP</menu>
 
 		<files folder="admin">
 			<filename>config.xml</filename>

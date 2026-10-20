@@ -15,7 +15,7 @@ use Joomla\CMS\MVC\Controller\AdminController;
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpsController extends AdminController
+class ClientsController extends AdminController
 {
     /**
      * Method to get a model object, load it if necessary.
@@ -28,7 +28,7 @@ class McpsController extends AdminController
      *
      * @since  __DEPLOY_VERSION__
      */
-    public function getModel($name = 'Mcp', $prefix = 'Administrator', $config = ['ignore_request' => true])
+    public function getModel($name = 'Client', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
         return parent::getModel($name, $prefix, $config);
     }

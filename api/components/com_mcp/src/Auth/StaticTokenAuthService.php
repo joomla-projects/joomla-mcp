@@ -16,7 +16,7 @@ namespace Joomla\Component\MCP\Api\Auth;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\Component\MCP\Administrator\Model\McpModel;
+use Joomla\Component\MCP\Administrator\Model\ClientModel;
 
 /**
  * OAuth service for MCP server authentication
@@ -28,11 +28,11 @@ class StaticTokenAuthService implements AuthServiceInterface
     /**
      * Constructor.
      *
-     * @param McpModel $tokenModel Access token model
+     * @param ClientModel $tokenModel Access token model
      *
      * @since __DEPLOY_VERSION__
      */
-    public function __construct(private readonly McpModel $tokenModel)
+    public function __construct(private readonly ClientModel $tokenModel)
     {
     }
 

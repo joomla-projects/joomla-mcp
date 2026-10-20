@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Joomla\Component\MCP\Administrator\View\Mcp;
+namespace Joomla\Component\MCP\Administrator\View\Client;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -46,14 +46,14 @@ class HtmlView extends BaseHtmlView
         // Add regenerate token button for existing items
         if (!$isNew) {
             $toolbar = $this->getDocument()->getToolbar();
-            $toolbar->standardButton('refresh', 'COM_MCP_TOOLBAR_REGENERATE_TOKEN', 'mcp.regenerateToken')
+            $toolbar->standardButton('refresh', 'COM_MCP_TOOLBAR_REGENERATE_TOKEN', 'client.regenerateToken')
                 ->icon('icon-refresh')
                 ->listCheck(false);
         }
 
-        ToolbarHelper::apply('mcp.apply');
-        ToolbarHelper::save('mcp.save');
-        ToolbarHelper::cancel('mcp.cancel');
+        ToolbarHelper::apply('client.apply');
+        ToolbarHelper::save('client.save');
+        ToolbarHelper::cancel('client.cancel');
 
         if ($user->authorise('core.admin', 'com_mcp') || $user->authorise('core.options', 'com_mcp')) {
             ToolbarHelper::preferences('com_mcp');

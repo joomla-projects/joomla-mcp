@@ -18,7 +18,7 @@ use Joomla\Database\ParameterType;
  *
  * @since  __DEPLOY_VERSION__
  */
-class McpModel extends AdminModel
+class ClientModel extends AdminModel
 {
     /**
      * Method to get a table object, load it if necessary.
@@ -48,13 +48,13 @@ class McpModel extends AdminModel
     {
         // Check the session for previously entered form data.
         $app  = Factory::getApplication();
-        $data = $app->getUserState('com_mcp.edit.mcp.data', []);
+        $data = $app->getUserState('com_mcp.edit.client.data', []);
 
         if (empty($data)) {
             // getItem() returns false for a record that does not exist
             $data = $this->getItem() ?: [];
         }
-        $this->preprocessData('com_mcp.mcp', $data);
+        $this->preprocessData('com_mcp.client', $data);
 
         return $data;
     }
@@ -87,7 +87,7 @@ class McpModel extends AdminModel
      *
      * The client_token field only displays the derived token; it is dropped here so a
      * form save never overwrites the stored seed. The seed is written by
-     * McpTable::check() and McpController::regenerateToken() only.
+     * McpTable::check() and ClientController::regenerateToken() only.
      *
      * @param   \Joomla\CMS\Form\Form  $form   The form to validate against.
      * @param   array                   $data   The data to validate.
@@ -121,7 +121,7 @@ class McpModel extends AdminModel
     public function getForm($data = [], $loadData = true)
     {
         // Get the form.
-        $form = $this->loadForm('com_mcp.mcp', 'mcp', ['control' => 'jform', 'load_data' => $loadData]);
+        $form = $this->loadForm('com_mcp.client', 'client', ['control' => 'jform', 'load_data' => $loadData]);
 
         if (empty($form)) {
             return false;
