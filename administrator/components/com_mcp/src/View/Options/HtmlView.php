@@ -1,11 +1,11 @@
 <?php
 
 /**
- * @package         Joomla.Administrator
- * @subpackage      com_config
+ * @package     Joomla.Administrator
+ * @subpackage  com_mcp
  *
- * @copyright   (C) 2017 Open Source Matters, Inc. <https://www.joomla.org>
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright   (C) 2026 Open Source Matters, Inc. <https://www.joomla.org>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\Component\MCP\Administrator\View\Options;
