@@ -28,7 +28,7 @@ class HtmlView extends BaseHtmlView
         $this->state = $model->getState();
 
         if ($this->item === false) {
-            throw new GenericDataException((string) $model->getError(), 404);
+            throw new GenericDataException(Text::_('COM_MCP_ERROR_ITEM_NOT_FOUND'), 404);
         }
 
         $this->addToolbar();
