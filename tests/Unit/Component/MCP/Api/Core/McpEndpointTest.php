@@ -32,6 +32,32 @@ use Psr\Log\LoggerInterface;
 class McpEndpointTest extends UnitTestCase
 {
     /**
+     * Remove token-carrying server variables so the environment cannot leak into the tests.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['HTTP_X_JOOMLA_TOKEN']);
+    }
+
+    /**
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    protected function tearDown(): void
+    {
+        unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['HTTP_X_JOOMLA_TOKEN']);
+
+        parent::tearDown();
+    }
+
+    /**
      * Convert a ToolResult through the private endpoint converter and return the wire format
      *
      * @param ToolResult|ResourceResult $result  The result to convert
@@ -116,6 +142,124 @@ class McpEndpointTest extends UnitTestCase
     }
 
     /**
+     * The token is read from the X-Joomla-Token header when there is no Authorization header.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenReadsJoomlaTokenHeader(): void
+    {
+        $request = new HttpMessage();
+        $request->setHeader('X-Joomla-Token', 'joomla-token');
+
+        $this->assertSame('joomla-token', $this->extractToken($request));
+    }
+
+    /**
+     * The token is read from the HTTP_X_JOOMLA_TOKEN server variable when the header is not on the request object.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenReadsJoomlaTokenServerVariable(): void
+    {
+        $_SERVER['HTTP_X_JOOMLA_TOKEN'] = 'server-token';
+
+        $this->assertSame('server-token', $this->extractToken(new HttpMessage()));
+    }
+
+    /**
+     * The Authorization: Bearer header takes precedence over the X-Joomla-Token header.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenPrefersBearerHeader(): void
+    {
+        $request = new HttpMessage();
+        $request->setHeader('Authorization', 'Bearer bearer-token');
+        $request->setHeader('X-Joomla-Token', 'joomla-token');
+
+        $this->assertSame('bearer-token', $this->extractToken($request));
+    }
+
+    /**
+     * A non-Bearer Authorization header (e.g. Basic auth added by a proxy) does not hide the X-Joomla-Token header.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenFallsBackWhenAuthorizationIsNotBearer(): void
+    {
+        $request = new HttpMessage();
+        $request->setHeader('Authorization', 'Basic dXNlcjpwYXNz');
+        $request->setHeader('X-Joomla-Token', 'joomla-token');
+
+        $this->assertSame('joomla-token', $this->extractToken($request));
+    }
+
+    /**
+     * An empty or whitespace-only X-Joomla-Token header is not a token.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testExtractTokenIgnoresEmptyJoomlaTokenHeader(): void
+    {
+        $request = new HttpMessage();
+        $request->setHeader('X-Joomla-Token', '   ');
+
+        $this->assertNull($this->extractToken($request));
+    }
+
+    /**
+     * A token sent in the X-Joomla-Token header is validated and never written to the log.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testJoomlaTokenHeaderIsValidatedAndRedactedInLogs(): void
+    {
+        $messages = [];
+        $logger   = $this->createMock(LoggerInterface::class);
+
+        foreach (['debug', 'info', 'warning', 'error'] as $level) {
+            $logger->method($level)->willReturnCallback(
+                static function (string|\Stringable $message) use (&$messages): void {
+                    $messages[] = (string) $message;
+                }
+            );
+        }
+
+        $authService = $this->createMock(AuthServiceInterface::class);
+        $authService->expects($this->once())
+            ->method('validateToken')
+            ->with('secret-joomla-token')
+            ->willReturn(null);
+
+        $endpoint = new McpEndpoint($this->createMock(AbilityRegistry::class), $authService, ['logger' => $logger]);
+
+        $request = new HttpMessage();
+        $request->setMethod('POST');
+        $request->setHeader('X-Joomla-Token', 'secret-joomla-token');
+
+        $response = $endpoint->handle($request);
+
+        $this->assertSame(401, $response->getStatusCode());
+        $this->assertNotEmpty($messages);
+
+        foreach ($messages as $message) {
+            $this->assertStringNotContainsString('secret-joomla-token', $message);
+        }
+    }
+
+    /**
      * A request without an authentication token must be rejected and must never
      * reach the ability registry. Guards against the removed ?test=auth bypass.
      *
@@ -125,9 +269,6 @@ class McpEndpointTest extends UnitTestCase
      */
     public function testRequestWithoutTokenIsRejected(): void
     {
-        // Ensure no ambient Authorization header leaks in from the environment
-        unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
-
         $authService = $this->createMock(AuthServiceInterface::class);
         $authService->expects($this->never())->method('validateToken');
 

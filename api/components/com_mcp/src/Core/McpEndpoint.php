@@ -98,11 +98,11 @@ class McpEndpoint
             $queryParams = $request->getQueryParams();
 
             $this->logger->debug("MCP: Request method: " . $request->getMethod());
-            // Redact the Authorization header before logging.
+            // Redact the headers that can carry the token before logging.
             $loggableHeaders = $headers;
 
             foreach (array_keys($loggableHeaders) as $name) {
-                if (strcasecmp((string) $name, 'Authorization') === 0) {
+                if (\in_array(strtolower((string) $name), ['authorization', 'x-joomla-token'], true)) {
                     $loggableHeaders[$name] = '***';
                 }
             }
@@ -110,11 +110,11 @@ class McpEndpoint
             $this->logger->debug("MCP: Request headers: " . json_encode($loggableHeaders));
             $this->logger->debug("MCP: Query params: " . json_encode($queryParams));
 
-            // Authenticate via the Authorization: Bearer header
+            // Authenticate via the Authorization: Bearer or the X-Joomla-Token header
             $token = $this->extractToken($request);
 
             if (!$token) {
-                $this->logger->error("MCP: No token found in Authorization header");
+                $this->logger->error("MCP: No token found in the Authorization or X-Joomla-Token header");
 
                 return $this->createUnauthorizedResponse('Missing authentication token');
             }
@@ -444,7 +444,11 @@ class McpEndpoint
     }
 
     /**
-     * Extract the bearer token from the request's Authorization header
+     * Extract the token from the request headers
+     *
+     * The Authorization: Bearer header is preferred. The X-Joomla-Token header is accepted as a fallback for clients
+     * and proxies that cannot set or forward the Authorization header, the same way Joomla's API token
+     * authentication does. Tokens in the query string are never accepted, as they would end up in server logs.
      *
      * @param HttpMessage $request Request object
      *
@@ -488,7 +492,14 @@ class McpEndpoint
             return $matches[1];
         }
 
-        return null;
+        // Fall back to the X-Joomla-Token header
+        $joomlaToken = trim($request->getHeader('X-Joomla-Token') ?? '');
+
+        if ($joomlaToken === '') {
+            $joomlaToken = trim((string) ($_SERVER['HTTP_X_JOOMLA_TOKEN'] ?? ''));
+        }
+
+        return $joomlaToken !== '' ? $joomlaToken : null;
     }
 
     /**
