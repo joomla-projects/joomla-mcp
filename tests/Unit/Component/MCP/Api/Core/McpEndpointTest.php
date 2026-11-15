@@ -520,6 +520,35 @@ class McpEndpointTest extends UnitTestCase
     }
 
     /**
+     * A tool called without arguments receives an empty array instead of null. See issue #74.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testToolCallWithoutArgumentsReceivesEmptyArray(): void
+    {
+        $tool = $this->createMock(ToolInterface::class);
+        $tool->method('getName')->willReturn('purgeCache');
+        $tool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object']]);
+        $tool->expects($this->once())
+            ->method('execute')
+            ->with([])
+            ->willReturn(ToolResult::text('done'));
+
+        $registry = $this->createMock(AbilityRegistry::class);
+        $registry->method('getTool')->with('purgeCache')->willReturn($tool);
+
+        $endpoint = new McpEndpoint($registry, $this->createMock(AuthServiceInterface::class));
+
+        $result = (new \ReflectionMethod(McpEndpoint::class, 'callTool'))->invoke($endpoint, $registry, 'purgeCache', null);
+        $wire   = json_decode(json_encode($result), true);
+
+        $this->assertFalse($wire['isError']);
+        $this->assertSame('done', $wire['content'][0]['text']);
+    }
+
+    /**
      * Read-only tools are not checked.
      *
      * @return  void

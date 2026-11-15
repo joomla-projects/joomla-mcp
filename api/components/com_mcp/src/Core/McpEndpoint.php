@@ -255,22 +255,7 @@ class McpEndpoint
 
         // Register tool/call handler
         $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
-            $toolName  = $params->name;
-            $arguments = $params->arguments;
-
-            try {
-                $tool = $abilityRegistry->getTool($toolName);
-            } catch (AbilityNotFoundException) {
-                throw McpServerException::unknownTool($toolName);
-            }
-
-            $refusal = $this->refuseSecretLeak($tool, $arguments);
-
-            if ($refusal !== null) {
-                return $this->toCallToolResult($refusal);
-            }
-
-            return $this->toCallToolResult($tool->execute($arguments));
+            return $this->callTool($abilityRegistry, $params->name, $params->arguments);
         });
 
         // Register resources/list handler
@@ -296,6 +281,39 @@ class McpEndpoint
         });
     }
 
+
+    /**
+     * Run a tools/call request
+     *
+     * @param AbilityRegistry $abilityRegistry Ability registry
+     * @param string          $toolName        The name of the tool to call
+     * @param array|null      $arguments       The call arguments; optional in the protocol, so possibly null
+     *
+     * @return  CallToolResult
+     *
+     * @throws  McpServerException  If no tool is registered under the given name
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function callTool(AbilityRegistry $abilityRegistry, string $toolName, ?array $arguments): CallToolResult
+    {
+        // Tools always receive an array, also when the client sent no arguments
+        $arguments ??= [];
+
+        try {
+            $tool = $abilityRegistry->getTool($toolName);
+        } catch (AbilityNotFoundException) {
+            throw McpServerException::unknownTool($toolName);
+        }
+
+        $refusal = $this->refuseSecretLeak($tool, $arguments);
+
+        if ($refusal !== null) {
+            return $this->toCallToolResult($refusal);
+        }
+
+        return $this->toCallToolResult($tool->execute($arguments));
+    }
 
     /**
      * Refuse a write tool call whose arguments contain a protected secret
