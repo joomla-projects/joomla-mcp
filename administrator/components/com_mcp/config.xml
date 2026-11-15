@@ -2,6 +2,20 @@
 <config>
 	<help key="MCP:_Options"/>
 	<inlinehelp button="show"/>
+	<fieldset name="security"
+			  label="COM_MCP_FIELDSET_SECURITY"
+	>
+		<field
+			name="forbidden_secrets"
+			type="textarea"
+			label="COM_MCP_FIELD_FORBIDDEN_SECRETS_LABEL"
+			description="COM_MCP_FIELD_FORBIDDEN_SECRETS_DESC"
+			rows="5"
+			filter="raw"
+			class="font-monospace"
+		/>
+	</fieldset>
+
 	<fieldset name="permissions"
 			  label="JCONFIG_PERMISSIONS_LABEL"
 	>

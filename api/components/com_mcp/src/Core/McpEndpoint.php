@@ -16,6 +16,7 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MCP\Resource\ResourceInterface;
 use Joomla\CMS\MCP\Resource\ResourceResult;
@@ -60,6 +61,13 @@ class McpEndpoint
      * @since __DEPLOY_VERSION__
      */
     private LoggerInterface $logger;
+
+    /**
+     * Guard against secrets in write tool calls, created per request once the token is known
+     *
+     * @since __DEPLOY_VERSION__
+     */
+    private ?SecretGuard $secretGuard = null;
 
     /**
      * Constructor.
@@ -134,6 +142,12 @@ class McpEndpoint
             $this->setCurrentUser($user);
             Factory::getApplication()->loadIdentity($user);
             Factory::getSession()->set('user', $user);
+
+            $this->secretGuard = SecretGuard::fromConfiguration(
+                Factory::getApplication(),
+                $token,
+                (string) ComponentHelper::getParams('com_mcp')->get('forbidden_secrets', '')
+            );
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
@@ -250,6 +264,12 @@ class McpEndpoint
                 throw McpServerException::unknownTool($toolName);
             }
 
+            $refusal = $this->refuseSecretLeak($tool, $arguments);
+
+            if ($refusal !== null) {
+                return $this->toCallToolResult($refusal);
+            }
+
             return $this->toCallToolResult($tool->execute($arguments));
         });
 
@@ -276,6 +296,42 @@ class McpEndpoint
         });
     }
 
+
+    /**
+     * Refuse a write tool call whose arguments contain a protected secret
+     *
+     * Read-only tools (readOnlyHint: true) are not checked. A tool without annotations counts as a write tool.
+     *
+     * @param ToolInterface $tool      The tool to be called
+     * @param mixed         $arguments The call arguments
+     *
+     * @return  ToolResult|null  An error result if the call is refused, null if it may run
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function refuseSecretLeak(ToolInterface $tool, mixed $arguments): ?ToolResult
+    {
+        if ($this->secretGuard === null) {
+            return null;
+        }
+
+        $annotations = $tool->getSchema()['annotations'] ?? [];
+
+        if (\is_array($annotations) && ($annotations['readOnlyHint'] ?? false) === true) {
+            return null;
+        }
+
+        if (!$this->secretGuard->containsSecret($arguments)) {
+            return null;
+        }
+
+        // Never log the arguments themselves: they contain the secret
+        $this->logger->warning(
+            \sprintf('MCP: Refused call to tool "%s": the arguments contain a protected value', $tool->getName())
+        );
+
+        return ToolResult::error('Refused: the arguments contain a protected value. The tool was not executed.');
+    }
 
     /**
      * Convert a tool result to the SDK wire format

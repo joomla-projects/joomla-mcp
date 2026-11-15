@@ -18,6 +18,7 @@ use Joomla\CMS\MCP\Tool\ToolResult;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
+use Joomla\Component\MCP\Api\Core\SecretGuard;
 use Joomla\Tests\Unit\UnitTestCase;
 use Mcp\Server\Transport\Http\HttpMessage;
 use Psr\Log\LoggerInterface;
@@ -443,6 +444,108 @@ class McpEndpointTest extends UnitTestCase
         $template->method('getMimeType')->willReturn('');
 
         return $template;
+    }
+
+    /**
+     * Call the private refuseSecretLeak method with a prepared guard
+     *
+     * @param ToolInterface $tool      The tool to be called
+     * @param mixed         $arguments The call arguments
+     *
+     * @return  ToolResult|null
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function refuseSecretLeak(ToolInterface $tool, mixed $arguments): ?ToolResult
+    {
+        $endpoint = new McpEndpoint(
+            $this->createMock(AbilityRegistry::class),
+            $this->createMock(AuthServiceInterface::class)
+        );
+
+        (new \ReflectionProperty(McpEndpoint::class, 'secretGuard'))->setValue($endpoint, new SecretGuard(['the-client-token']));
+
+        return (new \ReflectionMethod(McpEndpoint::class, 'refuseSecretLeak'))->invoke($endpoint, $tool, $arguments);
+    }
+
+    /**
+     * Create a tool mock with the given annotations
+     *
+     * @param array $annotations The tool annotations
+     *
+     * @return  ToolInterface
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function createAnnotatedTool(array $annotations): ToolInterface
+    {
+        $tool = $this->createMock(ToolInterface::class);
+        $tool->method('getName')->willReturn('someTool');
+        $tool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object'], 'annotations' => $annotations]);
+        $tool->expects($this->never())->method('execute');
+
+        return $tool;
+    }
+
+    /**
+     * A write tool call containing a protected value is refused with an error result.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testWriteToolCallWithSecretIsRefused(): void
+    {
+        $tool   = $this->createAnnotatedTool(['readOnlyHint' => false, 'destructiveHint' => false]);
+        $result = $this->refuseSecretLeak($tool, ['title' => 'Leak', 'articletext' => 'token: the-client-token']);
+
+        $this->assertNotNull($result);
+        $this->assertTrue($result->isError());
+    }
+
+    /**
+     * A tool without annotations counts as a write tool.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testToolWithoutAnnotationsIsTreatedAsWriteTool(): void
+    {
+        $tool = $this->createMock(ToolInterface::class);
+        $tool->method('getName')->willReturn('purgeCache');
+        $tool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object']]);
+
+        $this->assertNotNull($this->refuseSecretLeak($tool, ['note' => 'the-client-token']));
+    }
+
+    /**
+     * Read-only tools are not checked.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testReadOnlyToolCallIsNotChecked(): void
+    {
+        $tool = $this->createAnnotatedTool(['readOnlyHint' => true]);
+
+        $this->assertNull($this->refuseSecretLeak($tool, ['search' => 'the-client-token']));
+    }
+
+    /**
+     * A write tool call without protected values may run.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testWriteToolCallWithoutSecretMayRun(): void
+    {
+        $tool = $this->createAnnotatedTool(['readOnlyHint' => false]);
+
+        $this->assertNull($this->refuseSecretLeak($tool, ['title' => 'A normal article']));
+        $this->assertNull($this->refuseSecretLeak($tool, null));
     }
 
     /**
