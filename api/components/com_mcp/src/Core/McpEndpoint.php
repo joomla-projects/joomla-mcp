@@ -16,6 +16,7 @@ namespace Joomla\Component\MCP\Api\Core;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MCP\Resource\ResourceInterface;
 use Joomla\CMS\MCP\Resource\ResourceResult;
@@ -60,6 +61,13 @@ class McpEndpoint
      * @since __DEPLOY_VERSION__
      */
     private LoggerInterface $logger;
+
+    /**
+     * Records the tool calls of the current request, created once the client is known
+     *
+     * @since __DEPLOY_VERSION__
+     */
+    private ?ToolCallLogger $toolCallLogger = null;
 
     /**
      * Constructor.
@@ -134,6 +142,15 @@ class McpEndpoint
             $this->setCurrentUser($user);
             Factory::getApplication()->loadIdentity($user);
             Factory::getSession()->set('user', $user);
+
+            $componentParams = ComponentHelper::getParams('com_mcp');
+
+            $this->toolCallLogger = new ToolCallLogger(
+                ArgumentRedactor::fromConfiguration(Factory::getApplication(), $token),
+                $tokenInfo->client_name,
+                (bool) $componentParams->get('log_actions', 1),
+                (bool) $componentParams->get('log_debug', 0)
+            );
 
             $server = new Server($this->config['server_name'] ?? 'Joomla MCP Server');
 
@@ -241,16 +258,7 @@ class McpEndpoint
 
         // Register tool/call handler
         $server->registerHandler('tools/call', function ($params) use ($abilityRegistry) {
-            $toolName  = $params->name;
-            $arguments = $params->arguments;
-
-            try {
-                $tool = $abilityRegistry->getTool($toolName);
-            } catch (AbilityNotFoundException) {
-                throw McpServerException::unknownTool($toolName);
-            }
-
-            return $this->toCallToolResult($tool->execute($arguments));
+            return $this->callTool($abilityRegistry, $params->name, $params->arguments);
         });
 
         // Register resources/list handler
@@ -276,6 +284,88 @@ class McpEndpoint
         });
     }
 
+
+    /**
+     * Run a tools/call request
+     *
+     * @param AbilityRegistry $abilityRegistry Ability registry
+     * @param string          $toolName        The name of the tool to call
+     * @param array|null      $arguments       The call arguments; optional in the protocol, so possibly null
+     *
+     * @return  CallToolResult
+     *
+     * @throws  McpServerException  If no tool is registered under the given name
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function callTool(AbilityRegistry $abilityRegistry, string $toolName, ?array $arguments): CallToolResult
+    {
+        // Tools always receive an array, also when the client sent no arguments
+        $arguments ??= [];
+
+        try {
+            $tool = $abilityRegistry->getTool($toolName);
+        } catch (AbilityNotFoundException) {
+            throw McpServerException::unknownTool($toolName);
+        }
+
+        $start = hrtime(true);
+
+        try {
+            $result = $tool->execute($arguments);
+        } catch (\Throwable $e) {
+            $this->logToolCall($tool, $arguments, ToolCallLogger::OUTCOME_EXCEPTION, $start);
+
+            throw $e;
+        }
+
+        $outcome = $result->isError() ? ToolCallLogger::OUTCOME_ERROR : ToolCallLogger::OUTCOME_SUCCESS;
+        $this->logToolCall($tool, $arguments, $outcome, $start);
+
+        return $this->toCallToolResult($result);
+    }
+
+    /**
+     * Record a tool call, if a logger is set up for this request
+     *
+     * @param ToolInterface $tool      The called tool
+     * @param array         $arguments The call arguments
+     * @param string        $outcome   One of the ToolCallLogger::OUTCOME_* constants
+     * @param int|float     $start     The start time from hrtime(true)
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function logToolCall(ToolInterface $tool, array $arguments, string $outcome, int|float $start): void
+    {
+        $this->toolCallLogger?->log(
+            $tool->getName(),
+            $this->isReadOnlyTool($tool),
+            $arguments,
+            $outcome,
+            (hrtime(true) - $start) / 1e6,
+            $this->getCurrentUser()
+        );
+    }
+
+    /**
+     * Whether a tool is annotated as read-only
+     *
+     * A tool without annotations counts as a write tool.
+     *
+     * @param ToolInterface $tool The tool
+     *
+     * @return  boolean
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function isReadOnlyTool(ToolInterface $tool): bool
+    {
+        $annotations = $tool->getSchema()['annotations'] ?? [];
+
+        return \is_array($annotations) && ($annotations['readOnlyHint'] ?? false) === true;
+    }
 
     /**
      * Convert a tool result to the SDK wire format

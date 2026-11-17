@@ -15,9 +15,12 @@ use Joomla\CMS\MCP\Resource\ResourceResult;
 use Joomla\CMS\MCP\Resource\ResourceTemplateInterface;
 use Joomla\CMS\MCP\Tool\ToolInterface;
 use Joomla\CMS\MCP\Tool\ToolResult;
+use Joomla\CMS\User\User;
 use Joomla\Component\MCP\Api\Auth\AuthServiceInterface;
 use Joomla\Component\MCP\Api\Core\AbilityRegistry;
+use Joomla\Component\MCP\Api\Core\ArgumentRedactor;
 use Joomla\Component\MCP\Api\Core\McpEndpoint;
+use Joomla\Component\MCP\Api\Core\ToolCallLogger;
 use Joomla\Tests\Unit\UnitTestCase;
 use Mcp\Server\Transport\Http\HttpMessage;
 use Psr\Log\LoggerInterface;
@@ -443,6 +446,96 @@ class McpEndpointTest extends UnitTestCase
         $template->method('getMimeType')->willReturn('');
 
         return $template;
+    }
+
+    /**
+     * Tool calls are passed to the tool call logger with the read-only flag, the outcome and the user.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testToolCallsAreLogged(): void
+    {
+        $writeTool = $this->createMock(ToolInterface::class);
+        $writeTool->method('getName')->willReturn('content_articles_create');
+        $writeTool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object'], 'annotations' => ['readOnlyHint' => false]]);
+        $writeTool->method('execute')->willReturn(ToolResult::error('Validation failed'));
+
+        $readTool = $this->createMock(ToolInterface::class);
+        $readTool->method('getName')->willReturn('content_articles_list');
+        $readTool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object'], 'annotations' => ['readOnlyHint' => true]]);
+        $readTool->method('execute')->willReturn(ToolResult::text('[]'));
+
+        $registry = $this->createMock(AbilityRegistry::class);
+        $registry->method('getTool')->willReturnMap([
+            ['content_articles_create', $writeTool],
+            ['content_articles_list', $readTool],
+        ]);
+
+        $user     = new User();
+        $user->id = 42;
+
+        $endpoint = new McpEndpoint($registry, $this->createMock(AuthServiceInterface::class));
+        $endpoint->setCurrentUser($user);
+
+        $actionLog = [];
+        $debugLog  = [];
+        $logger    = new ToolCallLogger(
+            new ArgumentRedactor([]),
+            'Test Client',
+            true,
+            true,
+            function (array $message, string $languageKey, int $userId) use (&$actionLog): void {
+                $actionLog[] = [$message['tool'], $languageKey, $userId];
+            },
+            function (string $line) use (&$debugLog): void {
+                $debugLog[] = $line;
+            }
+        );
+
+        (new \ReflectionProperty(McpEndpoint::class, 'toolCallLogger'))->setValue($endpoint, $logger);
+
+        $callTool = new \ReflectionMethod(McpEndpoint::class, 'callTool');
+        $callTool->invoke($endpoint, $registry, 'content_articles_create', ['title' => 'Hi']);
+        $callTool->invoke($endpoint, $registry, 'content_articles_list', null);
+
+        // Only the write call goes to the action log
+        $this->assertSame([['content_articles_create', 'COM_MCP_ACTIONLOG_TOOL_FAILED', 42]], $actionLog);
+
+        // Both calls go to the debug log
+        $this->assertCount(2, $debugLog);
+        $this->assertStringContainsString('tool="content_articles_create" type=write outcome=error', $debugLog[0]);
+        $this->assertStringContainsString('tool="content_articles_list" type=read outcome=success', $debugLog[1]);
+    }
+
+    /**
+     * A tool called without arguments receives an empty array instead of null. See issue #74.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function testToolCallWithoutArgumentsReceivesEmptyArray(): void
+    {
+        $tool = $this->createMock(ToolInterface::class);
+        $tool->method('getName')->willReturn('purgeCache');
+        $tool->method('getSchema')->willReturn(['inputSchema' => ['type' => 'object']]);
+        $tool->expects($this->once())
+            ->method('execute')
+            ->with([])
+            ->willReturn(ToolResult::text('done'));
+
+        $registry = $this->createMock(AbilityRegistry::class);
+        $registry->method('getTool')->with('purgeCache')->willReturn($tool);
+
+        $endpoint = new McpEndpoint($registry, $this->createMock(AuthServiceInterface::class));
+
+        $result = (new \ReflectionMethod(McpEndpoint::class, 'callTool'))->invoke($endpoint, $registry, 'purgeCache', null);
+        $wire   = json_decode(json_encode($result), true);
+
+        $this->assertFalse($wire['isError']);
+        $this->assertSame('done', $wire['content'][0]['text']);
     }
 
     /**
