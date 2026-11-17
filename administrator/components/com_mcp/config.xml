@@ -2,6 +2,35 @@
 <config>
 	<help key="MCP:_Options"/>
 	<inlinehelp button="show"/>
+	<fieldset name="logging"
+			  label="COM_MCP_FIELDSET_LOGGING"
+	>
+		<field
+			name="log_actions"
+			type="radio"
+			label="COM_MCP_FIELD_LOG_ACTIONS_LABEL"
+			description="COM_MCP_FIELD_LOG_ACTIONS_DESC"
+			layout="joomla.form.field.radio.switcher"
+			default="1"
+			filter="integer"
+			>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field
+			name="log_debug"
+			type="radio"
+			label="COM_MCP_FIELD_LOG_DEBUG_LABEL"
+			description="COM_MCP_FIELD_LOG_DEBUG_DESC"
+			layout="joomla.form.field.radio.switcher"
+			default="0"
+			filter="integer"
+			>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+	</fieldset>
+
 	<fieldset name="permissions"
 			  label="JCONFIG_PERMISSIONS_LABEL"
 	>
