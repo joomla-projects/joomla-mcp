@@ -23,15 +23,18 @@ use Joomla\CMS\WebService\Definition\Attribute\Property\Example;
  */
 class ArticleImage
 {
-    #[Description('The intro image path, relative to the site root.')]
+    // The webservices return a local image as a full URL (ContentHelper::resolve()).
+    #[Description('The intro image path, relative to the site root. Reading returns a local image as a full URL.')]
     #[Example('images/joomla_black.png')]
     public string $image_intro = '';
 
     #[Description('The alternative text of the intro image.')]
     public string $image_intro_alt = '';
 
-    #[Description('Set when the intro image is decorative and therefore needs no alternative text.')]
-    public bool $image_intro_alt_empty = false;
+    // Joomla stores and returns the checkbox value as a string: "1" when checked, otherwise an empty string or nothing.
+    #[Description('"1" when the intro image is decorative and therefore needs no alternative text, otherwise empty.')]
+    #[Example('1')]
+    public string $image_intro_alt_empty = '';
 
     #[Description('A CSS class applied to the intro image. An empty value uses the global setting.')]
     public string $imgclass_intro = '';
@@ -43,14 +46,14 @@ class ArticleImage
     #[Description('The caption of the intro image.')]
     public string $image_intro_caption = '';
 
-    #[Description('The fulltext image path, relative to the site root.')]
+    #[Description('The fulltext image path, relative to the site root. Reading returns a local image as a full URL.')]
     public string $image_fulltext = '';
 
     #[Description('The alternative text of the fulltext image.')]
     public string $image_fulltext_alt = '';
 
-    #[Description('Set when the fulltext image is decorative and therefore needs no alternative text.')]
-    public bool $image_fulltext_alt_empty = false;
+    #[Description('"1" when the fulltext image is decorative and therefore needs no alternative text, otherwise empty.')]
+    public string $image_fulltext_alt_empty = '';
 
     #[Description('A CSS class applied to the fulltext image. An empty value uses the global setting.')]
     public string $imgclass_fulltext = '';

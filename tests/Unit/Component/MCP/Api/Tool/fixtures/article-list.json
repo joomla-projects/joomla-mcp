@@ -1,0 +1,127 @@
+{
+    "data": [
+        {
+            "type": "articles",
+            "id": "8",
+            "attributes": {
+                "id": 8,
+                "asset_id": 150,
+                "title": "MCP probe defaults",
+                "alias": "mcp-probe-defaults",
+                "state": 0,
+                "access": 1,
+                "created": "2026-11-18 21:12:06",
+                "created_by": 361,
+                "created_by_alias": "",
+                "modified": "2026-11-18 21:12:06",
+                "featured": 0,
+                "language": "*",
+                "hits": 0,
+                "publish_up": null,
+                "publish_down": null,
+                "introtext": "x",
+                "fulltext": "",
+                "note": "",
+                "images": [],
+                "metakey": "",
+                "metadesc": "",
+                "metadata": [],
+                "version": 1,
+                "featured_up": null,
+                "featured_down": null,
+                "typeAlias": "com_content.article",
+                "text": "x ",
+                "tags": [],
+                "schemaorg": null
+            },
+            "relationships": {
+                "category": {
+                    "data": {
+                        "type": "categories",
+                        "id": "2"
+                    }
+                },
+                "created_by": {
+                    "data": {
+                        "type": "users",
+                        "id": "361"
+                    }
+                },
+                "tags": {
+                    "data": []
+                }
+            }
+        },
+        {
+            "type": "articles",
+            "id": "7",
+            "attributes": {
+                "id": 7,
+                "asset_id": 149,
+                "title": "MCP contract probe",
+                "alias": "mcp-contract-probe",
+                "state": 0,
+                "access": 1,
+                "created": "2026-11-18 21:10:32",
+                "created_by": 361,
+                "created_by_alias": "",
+                "modified": "2026-11-18 21:10:56",
+                "featured": 0,
+                "language": "*",
+                "hits": 0,
+                "publish_up": null,
+                "publish_down": null,
+                "introtext": "Intro",
+                "fulltext": "Full",
+                "note": "",
+                "images": {
+                    "image_intro": "https://example.org/images/joomla_black.png",
+                    "image_intro_alt_empty": "1",
+                    "image_fulltext_alt_empty": ""
+                },
+                "metakey": "",
+                "metadesc": "",
+                "metadata": {
+                    "robots": "noindex, follow",
+                    "author": "Probe"
+                },
+                "version": 3,
+                "featured_up": null,
+                "featured_down": null,
+                "typeAlias": "com_content.article",
+                "text": "Intro Full",
+                "tags": {
+                    "3": "Example tag",
+                    "2": "Tag probe"
+                },
+                "schemaorg": null
+            },
+            "relationships": {
+                "category": {
+                    "data": {
+                        "type": "categories",
+                        "id": "2"
+                    }
+                },
+                "created_by": {
+                    "data": {
+                        "type": "users",
+                        "id": "361"
+                    }
+                },
+                "tags": {
+                    "data": [
+                        {
+                            "type": "tags",
+                            "id": "3"
+                        },
+                        {
+                            "type": "tags",
+                            "id": "2"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
