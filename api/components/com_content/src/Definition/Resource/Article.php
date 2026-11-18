@@ -64,30 +64,37 @@ final class Article extends BaseResource
     #[Hidden([OperationType::CREATE])]
     public string $fulltext = '';
 
-    #[Description('The article text, with the intro and full text combined.')]
+    // The webservices build text from introtext and fulltext and then run the content plugins on it. Joomla 6.2 deprecated
+    // it for removal in 8.0, without replacement.
+    #[Description('The intro and full text joined by a space, after the content plugins have processed it. Deprecated: it will be removed in Joomla 8.0; use introtext and fulltext instead.')]
     #[Hidden([OperationType::CREATE, OperationType::UPDATE])]
     public string $text;
 
-    #[Description('Tag identifiers when writing. Reading returns the full tag objects.')]
+    // The webservices render the tags as a map of tag identifier to title, the way TagsHelper::getTags() returns them.
+    #[Description('Tag identifiers when writing. Reading returns an object that maps each tag identifier to its title, for example {"2": "Blog"}.')]
     #[Items('integer', [OperationType::CREATE, OperationType::UPDATE])]
-    #[Items('object', [OperationType::READ, OperationType::LIST])]
+    #[Items('string', [OperationType::READ, OperationType::LIST], keyed: true)]
     public array $tags = [];
 
+    // The webservices themselves require a language on create: without one, saving fails because the language column has
+    // no default. The default here makes it optional for MCP callers only.
     #[Description('The language code. Use * for all languages.')]
     #[Example('*')]
     public string $language = '*';
 
-    #[Description('The publication state: 1 published, 0 unpublished, 2 archived or -2 trashed.')]
+    // The form default of 1 only applies in the administrator. The webservices leave an omitted state to the column
+    // default of the content table.
+    #[Description('The publication state: 1 published, 0 unpublished, 2 archived or -2 trashed. Omitted on create, the article is saved unpublished (0) when workflows are disabled.')]
     #[Example(1)]
     #[Optional([OperationType::CREATE])]
     public ArticleState $state;
 
-    #[Description('The category identifier for list and read endpoints.')]
+    #[Description('The category identifier. Reading returns the category as category instead.')]
     #[Hidden([OperationType::LIST, OperationType::READ])]
     public int $catid;
 
     # Folks, please, don't judge us: this has been legacy behavior of the webservices API
-    #[Description('The category identifier for create and update endpoints.')]
+    #[Description('The category, as a resource identifier: {"type": "categories", "id": <category identifier>}. Writing uses catid instead.')]
     #[Guarded]
     #[Hidden([OperationType::CREATE, OperationType::UPDATE])]
     public object $category;
@@ -164,6 +171,8 @@ final class Article extends BaseResource
     #[Hidden([OperationType::LIST, OperationType::READ])]
     public int $ordering;
 
+    // Only rendered while the schemaorg system plugin is enabled. It is the schema of the chosen type, an object.
+    #[Description('The schema.org data of the article, for example {"@type": "Article", "headline": "..."}. Null when the article has none.')]
     #[Guarded]
-    public ?array $schemaorg = null;
+    public ?object $schemaorg = null;
 }

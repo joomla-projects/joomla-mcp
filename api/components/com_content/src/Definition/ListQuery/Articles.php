@@ -68,15 +68,20 @@ final class Articles extends BaseListQuery
     #[Description('The workflow stage identifier. Ignored unless the "Enable Workflow" option is turned on for com_content.')]
     public ?int $stage = null;
 
+    // The webservices ignore an ordering that is not one of the filter fields of the model. The filter fields author_id,
+    // category_id, level, tag, published and stage pass that check but are no columns of the query, so ordering by them
+    // fails with an internal server error; they are not listed. Nor are rating and rating_count, which only exist while
+    // the vote plugin is enabled.
     #[Description(
         'The field the result set is ordered by. Accepts: id, title, alias, catid, category_title, state, access, '
         . 'access_level, created, created_by, created_by_alias, modified, ordering, featured, featured_up, '
-        . 'featured_down, language, hits, publish_up, publish_down, checked_out, checked_out_time, author_id, '
-        . 'category_id, level or tag.'
+        . 'featured_down, language, hits, publish_up, publish_down, checked_out or checked_out_time. Omitted, the '
+        . 'articles are ordered by id, or by their featured ordering when filtering on featured articles.'
     )]
     #[Example('created')]
     public ?string $ordering = 'id';
 
+    // Omitted, the webservices order descending; the argument mapper does not send query defaults.
     #[Description('The ordering direction. Accepts: asc, desc.')]
-    public ?string $direction = 'asc';
+    public ?string $direction = 'desc';
 }

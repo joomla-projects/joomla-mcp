@@ -218,8 +218,16 @@ final class SchemaFactory
      */
     private function arraySchema(\ReflectionProperty $property, OperationType $operationType): array
     {
+        $itemsAttribute = $this->itemsAttribute($property, $operationType);
+        $items          = $itemsAttribute === null ? [] : $this->schemaForItemType($itemsAttribute->type, $operationType);
+
+        // A keyed array, such as the tags of an article read as {"<id>": "<title>"}, is a JSON object, not a list. The
+        // item type describes its values.
+        if ($itemsAttribute?->keyed) {
+            return ['type' => 'object', 'additionalProperties' => $items === [] ? true : $items];
+        }
+
         $schema = ['type' => 'array'];
-        $items  = $this->arrayItemSchema($property, $operationType);
 
         // An empty PHP array encodes as a JSON list, which is not a valid items value. Untyped items are left out.
         if ($items !== []) {
@@ -229,22 +237,17 @@ final class SchemaFactory
         return $schema;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function arrayItemSchema(\ReflectionProperty $property, OperationType $operationType): array
+    private function itemsAttribute(\ReflectionProperty $property, OperationType $operationType): ?Items
     {
         foreach ($property->getAttributes(Items::class) as $attribute) {
             $items = $attribute->newInstance();
 
-            if (!$items->appliesTo($operationType)) {
-                continue;
+            if ($items->appliesTo($operationType)) {
+                return $items;
             }
-
-            return $this->schemaForItemType($items->type, $operationType);
         }
 
-        return [];
+        return null;
     }
 
     /**

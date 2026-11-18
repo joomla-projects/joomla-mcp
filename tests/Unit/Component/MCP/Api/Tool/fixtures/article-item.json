@@ -1,0 +1,86 @@
+{
+    "data": {
+        "type": "articles",
+        "id": "7",
+        "attributes": {
+            "typeAlias": "com_content.article",
+            "id": 7,
+            "asset_id": 149,
+            "title": "MCP contract probe",
+            "alias": "mcp-contract-probe",
+            "introtext": "Intro",
+            "fulltext": "Full",
+            "state": 0,
+            "created": "2026-11-18 21:10:32",
+            "created_by": 361,
+            "created_by_alias": "",
+            "modified": "2026-11-18 21:18:08",
+            "modified_by": 361,
+            "publish_up": null,
+            "publish_down": null,
+            "images": {
+                "image_intro": "https://example.org/images/joomla_black.png",
+                "image_intro_alt_empty": "1",
+                "image_fulltext_alt_empty": ""
+            },
+            "urls": {
+                "targeta": "1"
+            },
+            "version": 4,
+            "metakey": "",
+            "metadesc": "",
+            "access": 1,
+            "hits": 0,
+            "metadata": {
+                "robots": "noindex, follow",
+                "author": "Probe"
+            },
+            "featured": 0,
+            "language": "*",
+            "note": "",
+            "tags": {
+                "3": "Example tag",
+                "2": "Tag probe"
+            },
+            "featured_up": null,
+            "featured_down": null,
+            "text": "Intro Full",
+            "schemaorg": {
+                "@type": "Article",
+                "headline": "Probe headline"
+            }
+        },
+        "relationships": {
+            "category": {
+                "data": {
+                    "type": "categories",
+                    "id": "2"
+                }
+            },
+            "created_by": {
+                "data": {
+                    "type": "users",
+                    "id": "361"
+                }
+            },
+            "tags": {
+                "data": [
+                    {
+                        "type": "tags",
+                        "id": "3"
+                    },
+                    {
+                        "type": "tags",
+                        "id": "2"
+                    }
+                ]
+            },
+            "modified_by": {
+                "data": {
+                    "type": "users",
+                    "id": "361"
+                }
+            }
+        }
+    }
+}

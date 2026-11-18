@@ -50,7 +50,9 @@ final class ResourceSchemaFactoryTest extends TestCase
         $schema = (new SchemaFactory())->create(Article::class, OperationType::READ);
 
         self::assertTrue($schema['properties']['id']['readOnly']);
-        self::assertSame('object', $schema['properties']['tags']['items']['type']);
+        // Read returns the tags as a map of tag identifier to title.
+        self::assertSame('object', $schema['properties']['tags']['type']);
+        self::assertSame(['type' => 'string'], $schema['properties']['tags']['additionalProperties']);
         self::assertSame('date-time', $schema['properties']['created']['format']);
         // Read exposes the combined body as text; the write-only articletext is absent.
         self::assertArrayHasKey('text', $schema['properties']);
